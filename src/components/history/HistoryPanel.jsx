@@ -13,7 +13,7 @@ export default function HistoryPanel({ history, isOpen, onClose, onRestore }) {
       <div className="px-5 py-4 border-b border-border-custom flex items-center justify-between">
         <div className="flex items-center gap-2">
           <History className="w-4 h-4 text-primary" />
-          <h3 className="font-semibold text-white text-xs tracking-wider uppercase">
+          <h3 className="font-semibold text-text-primary text-xs tracking-wider uppercase">
             Historial de Versiones
           </h3>
         </div>
@@ -33,7 +33,7 @@ export default function HistoryPanel({ history, isOpen, onClose, onRestore }) {
             <History className="w-8 h-8 text-text-muted mb-4" />
             <h4 className="font-semibold text-text-secondary text-sm">Sin historial</h4>
             <p className="text-xs text-text-muted mt-2 leading-relaxed max-w-[180px] mx-auto">
-              Aún no hay versiones guardadas. Usa <strong className="text-white">Ctrl + S</strong> o haz clic en Guardar para registrar una versión.
+              Aún no hay versiones guardadas. Usa <strong className="text-text-primary">Ctrl + S</strong> o haz clic en Guardar para registrar una versión.
             </p>
           </div>
         ) : (

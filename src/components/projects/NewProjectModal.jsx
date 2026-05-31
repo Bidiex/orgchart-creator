@@ -238,7 +238,7 @@ export default function NewProjectModal({ isOpen, onClose, onCreateProject }) {
               <div className="flex items-center gap-3 p-3 bg-success/10 border border-success/20 text-success rounded-custom-md text-xs">
                 <CheckCircle className="w-5 h-5 shrink-0" />
                 <div className="min-w-0">
-                  <span className="font-semibold block text-white">Estructura validada con éxito</span>
+                  <span className="font-semibold block text-text-primary">Estructura validada con éxito</span>
                   <span className="block truncate text-text-secondary">{xlsxFile?.name} ({parsedData.totalNodes} colaboradores detectados)</span>
                 </div>
               </div>
@@ -262,7 +262,7 @@ export default function NewProjectModal({ isOpen, onClose, onCreateProject }) {
                       {parsedData.rawRows.slice(0, 5).map((row, idx) => (
                         <tr key={idx} className="hover:bg-bg-muted/30">
                           <td className="px-4 py-2 font-semibold text-text-secondary font-mono">{row.id}</td>
-                          <td className="px-4 py-2 text-white font-medium">{row.label}</td>
+                          <td className="px-4 py-2 text-text-primary font-medium">{row.label}</td>
                           <td className="px-4 py-2 text-text-secondary">{row.sublabel || '-'}</td>
                           <td className="px-4 py-2 text-text-muted font-mono">{row.parentId || '(Raíz)'}</td>
                         </tr>
@@ -293,7 +293,7 @@ export default function NewProjectModal({ isOpen, onClose, onCreateProject }) {
             <div className="p-3 bg-danger/10 border border-danger/25 text-danger rounded-custom-md flex items-start gap-2.5 text-xs">
               <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
               <div className="leading-relaxed">
-                <span className="font-semibold block text-white">Error de Validación</span>
+                <span className="font-semibold block text-text-primary">Error de Validación</span>
                 {xlsxError}
               </div>
             </div>

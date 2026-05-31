@@ -112,10 +112,16 @@ export default function OrgNode({ id, data, selected }) {
             }}
           />
         ) : (
-          <div className="font-semibold truncate text-white">{label || 'Sin etiqueta'}</div>
+          <div className="font-semibold truncate" style={{ color: nodeStyle.color }}>{label || 'Sin etiqueta'}</div>
         )}
         {sublabel && (
-          <div className="text-[11px] opacity-75 mt-0.5 truncate text-text-secondary font-medium">
+          <div
+            className="text-[11px] mt-0.5 truncate font-medium"
+            style={{
+              color: style?.sublabelColor || nodeStyle.color,
+              opacity: style?.sublabelColor ? 1 : 0.75
+            }}
+          >
             {sublabel}
           </div>
         )}

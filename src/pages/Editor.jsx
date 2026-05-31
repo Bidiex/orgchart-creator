@@ -244,11 +244,11 @@ export default function Editor({ projectId, onBack }) {
         <div className="space-y-4">
           <div className="flex items-center gap-3 text-warning">
             <AlertTriangle className="w-8 h-8 shrink-0" />
-            <h4 className="font-semibold text-white text-base">Este nodo tiene colaboradores a cargo</h4>
+            <h4 className="font-semibold text-text-primary text-base">Este nodo tiene colaboradores a cargo</h4>
           </div>
           
           <p className="text-xs text-text-secondary leading-relaxed">
-            El colaborador <strong className="text-white">"{nodes.find(n => n.id === selectedNodeId)?.data?.label || 'Sin etiqueta'}"</strong> tiene una estructura descendiente en el organigrama. Si lo eliminas, todos sus subordinados directos e indirectos también serán eliminados del lienzo de trabajo.
+            El colaborador <strong className="text-text-primary">"{nodes.find(n => n.id === selectedNodeId)?.data?.label || 'Sin etiqueta'}"</strong> tiene una estructura descendiente en el organigrama. Si lo eliminas, todos sus subordinados directos e indirectos también serán eliminados del lienzo de trabajo.
           </p>
 
           <p className="text-xs text-text-muted">

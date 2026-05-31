@@ -55,7 +55,7 @@ export default function ProjectCard({ project, onOpen, onDelete, onDuplicate }) 
             <Folder className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="font-semibold text-text-primary text-base line-clamp-1 group-hover:text-white transition-colors">
+            <h4 className="font-semibold text-text-primary text-base line-clamp-1 group-hover:text-primary transition-colors">
               {project.name}
             </h4>
             <p className="text-xs text-text-muted mt-1">

@@ -10,6 +10,7 @@ export default function StylePanel({ node, onUpdateNode, onApplyStyleToAll }) {
   // Extraer propiedades de estilo con fallbacks de seguridad
   const backgroundColor = style.backgroundColor || '#1E2538'
   const textColor = style.textColor || '#FFFFFF'
+  const sublabelColor = style.sublabelColor || '#E2E8F0'
   const borderColor = style.borderColor || '#334155'
   const borderWidth = style.borderWidth !== undefined ? style.borderWidth : 1
   const borderStyle = style.borderStyle || 'solid'
@@ -19,6 +20,7 @@ export default function StylePanel({ node, onUpdateNode, onApplyStyleToAll }) {
 
   const [localBg, setLocalBg] = useState(backgroundColor)
   const [localText, setLocalText] = useState(textColor)
+  const [localSublabelColor, setLocalSublabelColor] = useState(sublabelColor)
   const [localBorder, setLocalBorder] = useState(borderColor)
 
   useEffect(() => {
@@ -28,6 +30,10 @@ export default function StylePanel({ node, onUpdateNode, onApplyStyleToAll }) {
   useEffect(() => {
     setLocalText(textColor)
   }, [textColor])
+
+  useEffect(() => {
+    setLocalSublabelColor(sublabelColor)
+  }, [sublabelColor])
 
   useEffect(() => {
     setLocalBorder(borderColor)
@@ -58,6 +64,7 @@ export default function StylePanel({ node, onUpdateNode, onApplyStyleToAll }) {
     const currentStyle = {
       backgroundColor: localBg,
       textColor: localText,
+      sublabelColor: localSublabelColor,
       borderColor: localBorder,
       borderWidth,
       borderStyle,
@@ -115,9 +122,30 @@ export default function StylePanel({ node, onUpdateNode, onApplyStyleToAll }) {
           </div>
         </div>
 
+        {/* Color de Subtítulo (Cargo) */}
+        <div>
+          <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+            Color de Cargo / Subtítulo
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              value={localSublabelColor}
+              onChange={(e) => handleColorPickerChange('sublabelColor', e.target.value, setLocalSublabelColor)}
+              className="w-10 h-10 bg-transparent border-0 rounded-custom-sm cursor-pointer"
+            />
+            <input
+              type="text"
+              value={localSublabelColor}
+              onChange={(e) => handleHexInputChange('sublabelColor', e.target.value, setLocalSublabelColor)}
+              className="flex-1 bg-bg-app border border-border-custom text-text-primary text-sm rounded-custom-pill px-4 py-2 focus:outline-none focus:border-primary transition-colors text-center uppercase font-mono"
+            />
+          </div>
+        </div>
+
         {/* Borde: Color, Grosor, Estilo, Radio */}
         <div className="space-y-4 pt-3 border-t border-border-soft">
-          <div className="text-xs font-bold text-white uppercase tracking-wider">Configuración de Borde</div>
+          <div className="text-xs font-bold text-text-primary uppercase tracking-wider">Configuración de Borde</div>
           
           {/* Color del Borde */}
           <div>
@@ -142,7 +170,7 @@ export default function StylePanel({ node, onUpdateNode, onApplyStyleToAll }) {
           <div>
             <div className="flex justify-between text-[11px] text-text-secondary mb-1">
               <span>Grosor del Borde</span>
-              <span className="font-semibold text-white">{borderWidth}px</span>
+              <span className="font-semibold text-text-primary">{borderWidth}px</span>
             </div>
             <input
               type="range"
@@ -178,7 +206,7 @@ export default function StylePanel({ node, onUpdateNode, onApplyStyleToAll }) {
           <div>
             <div className="flex justify-between text-[11px] text-text-secondary mb-1">
               <span>Redondeado (Radio)</span>
-              <span className="font-semibold text-white">{borderRadius}px</span>
+              <span className="font-semibold text-text-primary">{borderRadius}px</span>
             </div>
             <input
               type="range"
@@ -193,13 +221,13 @@ export default function StylePanel({ node, onUpdateNode, onApplyStyleToAll }) {
 
         {/* Tamaño de Fuente & Ancho del Nodo */}
         <div className="space-y-4 pt-3 border-t border-border-soft">
-          <div className="text-xs font-bold text-white uppercase tracking-wider">Dimensiones y Texto</div>
+          <div className="text-xs font-bold text-text-primary uppercase tracking-wider">Dimensiones y Texto</div>
           
           {/* Tamaño de Fuente */}
           <div>
             <div className="flex justify-between text-[11px] text-text-secondary mb-1">
               <span>Tamaño de Letra</span>
-              <span className="font-semibold text-white">{fontSize}px</span>
+              <span className="font-semibold text-text-primary">{fontSize}px</span>
             </div>
             <input
               type="range"
@@ -215,7 +243,7 @@ export default function StylePanel({ node, onUpdateNode, onApplyStyleToAll }) {
           <div>
             <div className="flex justify-between text-[11px] text-text-secondary mb-1">
               <span>Ancho del Nodo</span>
-              <span className="font-semibold text-white">{nodeWidth}px</span>
+              <span className="font-semibold text-text-primary">{nodeWidth}px</span>
             </div>
             <input
               type="range"
@@ -249,11 +277,11 @@ export default function StylePanel({ node, onUpdateNode, onApplyStyleToAll }) {
         <div className="space-y-4">
           <div className="flex items-center gap-3 text-primary">
             <Sliders className="w-8 h-8 shrink-0" />
-            <h4 className="font-semibold text-white text-base">¿Deseas homologar el estilo de tu organigrama?</h4>
+            <h4 className="font-semibold text-text-primary text-base">¿Deseas homologar el estilo de tu organigrama?</h4>
           </div>
 
           <p className="text-xs text-text-secondary leading-relaxed">
-            Se aplicarán los colores, bordes, radio, tamaño de letra y ancho de este colaborador a <strong className="text-white">todos los nodos</strong> del proyecto actual.
+            Se aplicarán los colores, bordes, radio, tamaño de letra y ancho de este colaborador a <strong className="text-text-primary">todos los nodos</strong> del proyecto actual.
           </p>
 
           <p className="text-xs text-text-muted">

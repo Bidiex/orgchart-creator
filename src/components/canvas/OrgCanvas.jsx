@@ -166,14 +166,14 @@ function OrgCanvasContent({
         {showMiniMap && (
           <MiniMap
             style={{
-              background: '#11131E',
+              background: isDark ? '#11131E' : '#ffffff',
               borderRadius: '12px',
-              border: '1px solid #1E293B',
+              border: isDark ? '1px solid #1E293B' : '1px solid #e2e8f0',
               width: 140,
               height: 100
             }}
-            nodeColor="#334155"
-            maskColor="rgba(7, 8, 12, 0.7)"
+            nodeColor={isDark ? '#334155' : '#cbd5e1'}
+            maskColor={isDark ? 'rgba(7, 8, 12, 0.7)' : 'rgba(241, 245, 249, 0.7)'}
             className="!bottom-4 !right-4 no-export"
           />
         )}

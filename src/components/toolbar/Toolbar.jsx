@@ -85,7 +85,7 @@ export default function Toolbar({
             </div>
           ) : (
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => setIsEditing(true)}>
-              <h2 className="text-sm sm:text-base font-bold text-white tracking-tight flex items-center gap-1.5 line-clamp-1">
+              <h2 className="text-sm sm:text-base font-bold text-text-primary tracking-tight flex items-center gap-1.5 line-clamp-1">
                 <span>{projectName || 'Proyecto sin título'}</span>
                 {isDirty && (
                   <span className="text-orange-500 animate-pulse font-bold text-xs" title="Cambios sin guardar">●</span>

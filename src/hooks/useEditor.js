@@ -6,6 +6,7 @@ import { applyDagreLayout } from '../utils/layoutUtils'
 const DEFAULT_NODE_STYLE = {
   backgroundColor: '#1E2538',
   textColor: '#FFFFFF',
+  sublabelColor: '#E2E8F0',
   borderColor: '#334155',
   borderWidth: 1,
   borderRadius: 12, // custom-sm

@@ -25,7 +25,7 @@ export default function Sidebar({
     <div className="h-full flex flex-col bg-surface border-l border-border-custom w-[280px] overflow-hidden select-none">
       {/* Header del Sidebar */}
       <div className="px-5 py-4 border-b border-border-custom flex items-center justify-between">
-        <h3 className="font-semibold text-white text-xs tracking-wider uppercase">
+        <h3 className="font-semibold text-text-primary text-xs tracking-wider uppercase">
           Propiedades
         </h3>
         {selectedNode && (

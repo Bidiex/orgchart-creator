@@ -73,11 +73,11 @@ export default function HistoryEntry({ entry, onRestore }) {
         <div className="space-y-4">
           <div className="flex items-center gap-3 text-warning">
             <AlertTriangle className="w-8 h-8 shrink-0" />
-            <h4 className="font-semibold text-white text-base">¿Deseas restaurar a la versión v{entry.version}?</h4>
+            <h4 className="font-semibold text-text-primary text-base">¿Deseas restaurar a la versión v{entry.version}?</h4>
           </div>
 
           <p className="text-xs text-text-secondary leading-relaxed">
-            Se recargará el estado completo del organigrama en esta versión. <strong className="text-white">Los cambios que no hayas guardado en la versión actual se perderán definitivamente.</strong>
+            Se recargará el estado completo del organigrama en esta versión. <strong className="text-text-primary">Los cambios que no hayas guardado en la versión actual se perderán definitivamente.</strong>
           </p>
 
           <p className="text-xs text-text-muted">

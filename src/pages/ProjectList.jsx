@@ -25,7 +25,7 @@ export default function ProjectList({ onOpenProject }) {
             <div className="bg-primary/10 p-2 rounded-custom-sm text-primary">
               <LayoutGrid className="w-5 h-5" />
             </div>
-            <span className="font-bold text-lg tracking-tight text-white mr-1">OrgChart Studio</span>
+            <span className="font-bold text-lg tracking-tight text-text-primary mr-1">OrgChart Studio</span>
             {!loading && (
               <span className="text-xs bg-bg-muted border border-border-custom text-text-secondary px-2.5 py-1 rounded-custom-pill font-medium">
                 {projects.length} {projects.length === 1 ? 'proyecto' : 'proyectos'}
@@ -48,7 +48,7 @@ export default function ProjectList({ onOpenProject }) {
         <div className="flex flex-col gap-8">
           {/* Dashboard Intro */}
           <div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">Mis Organigramas</h1>
+            <h1 className="text-3xl font-bold text-text-primary tracking-tight">Mis Organigramas</h1>
             <p className="text-sm text-text-secondary mt-1.5">
               Crea, gestiona y audita las estructuras organizacionales de tu empresa.
             </p>
