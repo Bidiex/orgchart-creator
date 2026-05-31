@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand Accent Color */
+  --color-primary: #2155FF;
+  --color-primary-hover: #1746E0;
+  --color-primary-soft: rgba(33, 85, 255, 0.15);
+
+  /* Modern Dark Theme Colors */
+  --color-bg-app: #07080C;
+  --color-bg-soft: #0B0F19;
+  --color-bg-muted: #1E2538;
+  --color-surface: #11131E;
+
+  --color-text-primary: #F8FAFC;
+  --color-text-secondary: #94A3B8;
+  --color-text-muted: #64748B;
+
+  --color-border-custom: #1E293B;
+  --color-border-soft: #0F172A;
+
+  --color-success: #16A34A;
+  --color-warning: #D97706;
+  --color-danger: #DC2626;
+
+  /* Border Radius */
+  --radius-custom-sm: 12px;
+  --radius-custom-md: 18px;
+  --radius-custom-lg: 24px;
+  --radius-custom-xl: 32px;
+  --radius-custom-pill: 999px;
+
+  /* Shadows */
+  --shadow-custom-default: 0 10px 30px rgba(0,0,0,0.5);
+  --shadow-custom-hover: 0 20px 50px rgba(0,0,0,0.7);
+  
+  /* Fonts */
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+
+/* Custom Base Layer for Dark Theme */
+@layer base {
+  body {
+    background-color: var(--color-bg-app);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Animations */
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.15s ease;
+}

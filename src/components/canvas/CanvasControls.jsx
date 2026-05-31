@@ -1,0 +1,47 @@
+import React from 'react'
+import { useReactFlow, Panel } from '@xyflow/react'
+import { ZoomIn, ZoomOut, Maximize, RefreshCw } from 'lucide-react'
+
+export default function CanvasControls({ onReorganize }) {
+  const { zoomIn, zoomOut, fitView } = useReactFlow()
+
+  return (
+    <Panel
+      position="bottom-left"
+      className="flex items-center gap-1 bg-surface/90 backdrop-blur-md border border-border-custom p-1.5 rounded-custom-pill shadow-custom-hover z-40"
+    >
+      <button
+        onClick={() => zoomIn()}
+        className="p-2 text-text-secondary hover:text-text-primary hover:bg-bg-muted rounded-custom-pill transition-colors"
+        title="Acercar"
+      >
+        <ZoomIn className="w-4 h-4" />
+      </button>
+      <button
+        onClick={() => zoomOut()}
+        className="p-2 text-text-secondary hover:text-text-primary hover:bg-bg-muted rounded-custom-pill transition-colors"
+        title="Alejar"
+      >
+        <ZoomOut className="w-4 h-4" />
+      </button>
+      <button
+        onClick={() => fitView({ duration: 400 })}
+        className="p-2 text-text-secondary hover:text-text-primary hover:bg-bg-muted rounded-custom-pill transition-colors"
+        title="Ajustar vista"
+      >
+        <Maximize className="w-4 h-4" />
+      </button>
+      
+      <div className="w-px h-5 bg-border-custom mx-1" />
+      
+      <button
+        onClick={onReorganize}
+        className="flex items-center gap-1.5 bg-primary hover:bg-primary-hover text-white text-xs font-semibold px-3 py-1.5 rounded-custom-pill shadow-custom-default transition-all hover:scale-105 active:scale-95"
+        title="Organizar nodos con algoritmo Dagre"
+      >
+        <RefreshCw className="w-3.5 h-3.5" />
+        Reorganizar
+      </button>
+    </Panel>
+  )
+}
