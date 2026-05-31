@@ -1,5 +1,6 @@
-import { toPng, toJpeg } from 'html-to-image'
+import { toPng } from 'html-to-image'
 import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
 
 /**
  * Genera un nombre de archivo con fecha formateada
@@ -19,6 +20,40 @@ function triggerDownload(dataUrl, filename) {
 }
 
 /**
+ * Filtro de exportación para omitir elementos de interfaz de usuario
+ */
+function exportFilter(node) {
+  let current = node
+  while (current) {
+    if (
+      current.classList &&
+      (current.classList.contains('no-export') ||
+        current.classList.contains('react-flow__handle') ||
+        current.classList.contains('react-flow__controls') ||
+        current.classList.contains('react-flow__minimap'))
+    ) {
+      return false
+    }
+    current = current.parentElement
+  }
+  return true
+}
+
+/**
+ * Lee el color actual del canvas desde las variables CSS
+ */
+function getCanvasBackgroundColor() {
+  try {
+    const computedBg = window.getComputedStyle(document.documentElement).getPropertyValue('--color-bg-soft').trim()
+    if (computedBg) return computedBg
+  } catch (e) {
+    console.warn('Error reading --color-bg-soft CSS variable:', e)
+  }
+  const isDarkTheme = document.documentElement.classList.contains('dark')
+  return isDarkTheme ? '#0B0F19' : '#f1f5f9'
+}
+
+/**
  * Hook principal de exportación. No necesita estado propio — todos los métodos
  * son funciones puras que reciben los refs/datos necesarios.
  */
@@ -35,13 +70,11 @@ export function useExport() {
       return
     }
     try {
+      const bgColor = getCanvasBackgroundColor()
       const dataUrl = await toPng(canvasRef.current, {
         pixelRatio: 2,
-        backgroundColor: '#07080C',
-        filter: (node) => {
-          if (node?.classList?.contains('no-export')) return false
-          return true
-        }
+        backgroundColor: bgColor,
+        filter: exportFilter
       })
       const name = `${projectName || 'organigrama'}-v${version ?? 1}-${getTimestamp()}.png`
       triggerDownload(dataUrl, name)
@@ -60,15 +93,11 @@ export function useExport() {
       return
     }
     try {
-      // html-to-image no tiene toWebp nativo, usamos toJpeg con calidad alta
-      // o podemos convertir el PNG a WebP con un canvas intermedio
+      const bgColor = getCanvasBackgroundColor()
       const pngUrl = await toPng(canvasRef.current, {
         pixelRatio: 2,
-        backgroundColor: '#07080C',
-        filter: (node) => {
-          if (node?.classList?.contains('no-export')) return false
-          return true
-        }
+        backgroundColor: bgColor,
+        filter: exportFilter
       })
 
       // Convertir a WebP via canvas
@@ -102,19 +131,70 @@ export function useExport() {
       return
     }
     try {
+      // Garantizar que el componente esté completamente pintado antes de la captura (un frame + 100ms)
+      await new Promise((r) => requestAnimationFrame(r))
+      await new Promise((r) => setTimeout(r, 100))
+
       const dataUrl = await toPng(historyRef.current, {
         pixelRatio: 2,
         backgroundColor: '#FFFFFF',
-        filter: (node) => {
-          if (node?.classList?.contains('no-export')) return false
-          return true
-        }
+        filter: exportFilter
       })
       const name = `${projectName || 'organigrama'}-historial-${getTimestamp()}.png`
       triggerDownload(dataUrl, name)
     } catch (err) {
       console.error('Error exportando historial PNG:', err)
       alert('No se pudo exportar el historial. Intenta de nuevo.')
+    }
+  }
+
+  /**
+   * Exporta el historial de cambios en formato Markdown (.md).
+   * @param {object} project - Objeto del proyecto
+   * @param {Array} history - Historial de versiones del proyecto
+   */
+  function exportHistoryAsMarkdown(project, history) {
+    if (!project) {
+      alert('Proyecto no encontrado para exportar.')
+      return
+    }
+
+    try {
+      const projectName = project.name || 'Proyecto sin título'
+      const formattedDate = format(new Date(), "d 'de' MMMM, yyyy - h:mm a", { locale: es })
+      
+      let markdown = `# Historial de cambios — ${projectName}\n`
+      markdown += `Exportado el ${formattedDate} | ${history.length} versiones registradas\n\n`
+      markdown += `---\n\n`
+
+      if (history.length === 0) {
+        markdown += `*No hay versiones registradas en este historial.*\n`
+      } else {
+        history.forEach((entry) => {
+          const entryDate = format(new Date(entry.timestamp), "d MMM yyyy, h:mm a", { locale: es }).replace(/\./g, '')
+          markdown += `## v${entry.version} — ${entryDate}\n\n`
+          
+          if (entry.description) {
+            const lines = entry.description.split('\n').filter(Boolean)
+            lines.forEach((line) => {
+              const cleanLine = line.startsWith('•') ? line.substring(1).trim() : line
+              markdown += `- ${cleanLine}\n`
+            })
+          } else {
+            markdown += `- Sin descripción de cambios.\n`
+          }
+          markdown += `\n---\n\n`
+        })
+      }
+
+      const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const name = `${projectName}-historial-${getTimestamp()}.md`
+      triggerDownload(url, name)
+      setTimeout(() => URL.revokeObjectURL(url), 5000)
+    } catch (err) {
+      console.error('Error al exportar historial como Markdown:', err)
+      alert('No se pudo exportar el historial como Markdown.')
     }
   }
 
@@ -147,6 +227,7 @@ export function useExport() {
     exportChartAsPNG,
     exportChartAsWebP,
     exportHistoryAsPNG,
+    exportHistoryAsMarkdown,
     exportProjectAsJSON
   }
 }

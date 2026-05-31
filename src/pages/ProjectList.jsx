@@ -6,7 +6,7 @@ import NewProjectModal from '../components/projects/NewProjectModal'
 import { LayoutGrid, Plus, Loader2 } from 'lucide-react'
 
 export default function ProjectList({ onOpenProject }) {
-  const { projects, loading, createProject, deleteProject } = useProjects()
+  const { projects, loading, createProject, deleteProject, duplicateProject } = useProjects()
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   const handleCreateProject = (name, initialSnapshot = null) => {
@@ -25,7 +25,12 @@ export default function ProjectList({ onOpenProject }) {
             <div className="bg-primary/10 p-2 rounded-custom-sm text-primary">
               <LayoutGrid className="w-5 h-5" />
             </div>
-            <span className="font-bold text-lg tracking-tight text-white">OrgChart Studio</span>
+            <span className="font-bold text-lg tracking-tight text-white mr-1">OrgChart Studio</span>
+            {!loading && (
+              <span className="text-xs bg-bg-muted border border-border-custom text-text-secondary px-2.5 py-1 rounded-custom-pill font-medium">
+                {projects.length} {projects.length === 1 ? 'proyecto' : 'proyectos'}
+              </span>
+            )}
           </div>
 
           <button
@@ -67,6 +72,7 @@ export default function ProjectList({ onOpenProject }) {
                   project={project}
                   onOpen={onOpenProject}
                   onDelete={deleteProject}
+                  onDuplicate={duplicateProject}
                 />
               ))}
             </div>

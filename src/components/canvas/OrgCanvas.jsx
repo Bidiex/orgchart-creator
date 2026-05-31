@@ -10,6 +10,7 @@ import {
 import OrgNode from './OrgNode'
 import OrgEdge from './OrgEdge'
 import CanvasControls from './CanvasControls'
+import { useTheme } from '../../hooks/useTheme'
 
 // Estilos de React Flow (Requeridos en el core del canvas)
 import '@xyflow/react/dist/style.css'
@@ -31,8 +32,13 @@ function OrgCanvasContent({
   selectNode,
   addChildNode,
   reorganizeNodes,
-  showMiniMap
+  showMiniMap,
+  onUpdateNode,
+  toggleCollapse
 }) {
+  const { isDark } = useTheme()
+  const dotColor = isDark ? '#273549' : '#cbd5e1'
+
   const onNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
     [setNodes]
@@ -43,16 +49,52 @@ function OrgCanvasContent({
     [setEdges]
   )
 
-  // Inyectar el callback onAddChild en la data de cada nodo
+  // Inyectar el callback onAddChild y otros datos útiles en la data de cada nodo
   const nodesWithCallbacks = useMemo(() => {
-    return nodes.map((node) => ({
-      ...node,
-      data: {
-        ...node.data,
-        onAddChild: addChildNode
+    // Construir mapa de hijos directos: nodeId -> targetIds
+    const childrenMap = {}
+    edges.forEach((edge) => {
+      if (!childrenMap[edge.source]) {
+        childrenMap[edge.source] = []
       }
-    }))
-  }, [nodes, addChildNode])
+      childrenMap[edge.source].push(edge.target)
+    })
+
+    // Helper recursivo para contar descendientes totales
+    const countDescendants = (nodeId) => {
+      let count = 0
+      const queue = [nodeId]
+      const visited = new Set([nodeId])
+      while (queue.length > 0) {
+        const current = queue.shift()
+        const children = childrenMap[current] || []
+        for (const child of children) {
+          if (!visited.has(child)) {
+            visited.add(child)
+            count++
+            queue.push(child)
+          }
+        }
+      }
+      return count
+    }
+
+    return nodes.map((node) => {
+      const hasChildren = (childrenMap[node.id] || []).length > 0
+      const descendantsCount = hasChildren ? countDescendants(node.id) : 0
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          onAddChild: addChildNode,
+          onUpdateNode: onUpdateNode,
+          onToggleCollapse: toggleCollapse,
+          hasChildren,
+          descendantsCount
+        }
+      }
+    })
+  }, [nodes, edges, addChildNode, onUpdateNode, toggleCollapse])
 
   const onNodeClick = useCallback(
     (event, node) => {
@@ -68,11 +110,40 @@ function OrgCanvasContent({
     [selectNode]
   )
 
+  // Determinar qué nodos son visibles: un nodo es visible si no tiene ningún ancestro colapsado
+  const visibleNodes = useMemo(() => {
+    const parentMap = {}
+    edges.forEach((edge) => {
+      parentMap[edge.target] = edge.source
+    })
+
+    return nodesWithCallbacks.filter((node) => {
+      let currentId = node.id
+      while (parentMap[currentId]) {
+        const parentId = parentMap[currentId]
+        const parentNode = nodes.find((n) => n.id === parentId)
+        if (parentNode && parentNode.data?.isCollapsed) {
+          return false
+        }
+        currentId = parentId
+      }
+      return true
+    })
+  }, [nodesWithCallbacks, edges, nodes])
+
+  // Determinar qué aristas son visibles: una arista es visible si tanto su origen como su destino son visibles
+  const visibleEdges = useMemo(() => {
+    const visibleNodeIds = new Set(visibleNodes.map((n) => n.id))
+    return edges.filter((edge) => {
+      return visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target)
+    })
+  }, [visibleNodes, edges])
+
   return (
     <div className="w-full h-full relative">
       <ReactFlow
-        nodes={nodesWithCallbacks}
-        edges={edges}
+        nodes={visibleNodes}
+        edges={visibleEdges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
@@ -86,7 +157,7 @@ function OrgCanvasContent({
         defaultMarkerColor="#94a3b8"
       >
         {/* Fondo con patrón de puntos sutil */}
-        <Background variant="dots" color="#273549" gap={18} size={1} />
+        <Background variant="dots" color={dotColor} gap={18} size={1} />
         
         {/* Controles de canvas propios */}
         <CanvasControls onReorganize={reorganizeNodes} />
@@ -103,7 +174,7 @@ function OrgCanvasContent({
             }}
             nodeColor="#334155"
             maskColor="rgba(7, 8, 12, 0.7)"
-            className="!bottom-4 !right-4"
+            className="!bottom-4 !right-4 no-export"
           />
         )}
       </ReactFlow>

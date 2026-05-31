@@ -35,8 +35,10 @@ export default function OrgEdge({
         stroke: strokeColor,
         strokeWidth,
         strokeDasharray,
+        fill: 'none',
       }}
-      className="react-flow__edge-path fill-none transition-colors duration-300"
+      fill="none"
+      className="react-flow__edge-path transition-colors duration-300"
       d={edgePath}
     />
   )

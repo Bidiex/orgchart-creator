@@ -8,7 +8,7 @@ export default function CanvasControls({ onReorganize }) {
   return (
     <Panel
       position="bottom-left"
-      className="flex items-center gap-1 bg-surface/90 backdrop-blur-md border border-border-custom p-1.5 rounded-custom-pill shadow-custom-hover z-40"
+      className="flex items-center gap-1 bg-surface/90 backdrop-blur-md border border-border-custom p-1.5 rounded-custom-pill shadow-custom-hover z-40 no-export"
     >
       <button
         onClick={() => zoomIn()}

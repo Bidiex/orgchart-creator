@@ -178,7 +178,8 @@ export default function NewProjectModal({ isOpen, onClose, onCreateProject }) {
             </button>
             <button
               type="submit"
-              className="bg-primary hover:bg-primary-hover text-white px-6 py-2.5 rounded-custom-pill text-sm font-medium shadow-custom-default transition-colors"
+              disabled={!name.trim()}
+              className="bg-primary hover:bg-primary-hover disabled:bg-primary/40 disabled:text-white/50 text-white px-6 py-2.5 rounded-custom-pill text-sm font-medium shadow-custom-default transition-colors"
             >
               Crear proyecto
             </button>
@@ -319,7 +320,7 @@ export default function NewProjectModal({ isOpen, onClose, onCreateProject }) {
               </button>
               <button
                 type="submit"
-                disabled={!parsedData}
+                disabled={!parsedData || !xlsxProjectName.trim()}
                 className="bg-primary hover:bg-primary-hover disabled:bg-primary/40 disabled:text-white/50 text-white px-5 py-2 rounded-custom-pill text-xs font-semibold shadow-custom-default flex items-center gap-1.5 transition-all"
               >
                 Crear proyecto

@@ -18,32 +18,91 @@ export default React.forwardRef(function HistoryExportView({ projectName, histor
     <div
       ref={ref}
       style={{
-        position: 'absolute',
-        left: '-9999px',
-        top: '-9999px',
+        opacity: 0,
+        pointerEvents: 'none',
+        position: 'fixed',
+        top: 0,
+        left: 0,
         width: '800px',
+        zIndex: -1,
         backgroundColor: '#FFFFFF',
         color: '#111111',
-        fontFamily: "'Inter', sans-serif"
+        fontFamily: "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+        padding: '40px',
+        border: '1px solid #E2E8F0',
+        boxSizing: 'border-box'
       }}
-      className="p-10 border border-gray-200"
     >
       {/* Header */}
-      <div className="border-b-2 border-blue-600 pb-6 mb-8 flex justify-between items-end">
+      <div
+        style={{
+          borderBottom: '2px solid #2155FF',
+          paddingBottom: '24px',
+          marginBottom: '32px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-end',
+          boxSizing: 'border-box'
+        }}
+      >
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Historial de Versiones</h1>
-          <h2 className="text-lg font-semibold text-blue-600 mt-1">{projectName || 'Proyecto sin título'}</h2>
+          <h1
+            style={{
+              margin: 0,
+              fontSize: '24px',
+              fontWeight: '800',
+              color: '#0F172A',
+              letterSpacing: '-0.025em',
+              lineHeight: '1.2'
+            }}
+          >
+            Historial de Versiones
+          </h1>
+          <h2
+            style={{
+              margin: '6px 0 0 0',
+              fontSize: '18px',
+              fontWeight: '600',
+              color: '#2155FF',
+              lineHeight: '1.2'
+            }}
+          >
+            {projectName || 'Proyecto sin título'}
+          </h2>
         </div>
-        <div className="text-right text-xs text-gray-500">
-          <p>Exportado: {formattedExportDate()}</p>
-          <p className="mt-1 font-medium">{history.length} versiones registradas</p>
+        <div
+          style={{
+            textAlign: 'right',
+            fontSize: '12px',
+            color: '#64748B',
+            lineHeight: '1.4'
+          }}
+        >
+          <p style={{ margin: 0 }}>Exportado: {formattedExportDate()}</p>
+          <p style={{ margin: '4px 0 0 0', fontWeight: '600', color: '#0F172A' }}>
+            {history.length} {history.length === 1 ? 'versión registrada' : 'versiones registradas'}
+          </p>
         </div>
       </div>
 
       {/* Changelog List */}
-      <div className="space-y-6">
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '20px',
+          boxSizing: 'border-box'
+        }}
+      >
         {chronologicalHistory.length === 0 ? (
-          <div className="text-center py-12 text-gray-400 text-sm">
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '48px 0',
+              color: '#94A3B8',
+              fontSize: '14px'
+            }}
+          >
             No hay versiones registradas en este historial.
           </div>
         ) : (
@@ -58,23 +117,88 @@ export default React.forwardRef(function HistoryExportView({ projectName, histor
             }
 
             return (
-              <div key={entry.id} className="border border-gray-150 p-5 rounded-xl bg-gray-50 flex flex-col gap-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold bg-blue-100 text-blue-800 px-3 py-1 rounded-full">
+              <div
+                key={entry.id}
+                style={{
+                  border: '1px solid #E2E8F0',
+                  padding: '20px',
+                  borderRadius: '12px',
+                  backgroundColor: '#F8FAFC',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  boxSizing: 'border-box'
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      backgroundColor: '#EFF6FF',
+                      color: '#1E40AF',
+                      padding: '4px 12px',
+                      borderRadius: '999px',
+                      display: 'inline-block'
+                    }}
+                  >
                     Versión v{entry.version}
                   </span>
-                  <span className="text-xs text-gray-500 font-medium">
+                  <span
+                    style={{
+                      fontSize: '12px',
+                      color: '#64748B',
+                      fontWeight: '500'
+                    }}
+                  >
                     {formattedDate()}
                   </span>
                 </div>
 
-                <div className="space-y-1.5 pl-1">
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    paddingLeft: '4px',
+                    boxSizing: 'border-box'
+                  }}
+                >
                   {lines.map((line, idx) => {
                     const cleanLine = line.startsWith('•') ? line.substring(1).trim() : line
                     return (
-                      <div key={idx} className="text-sm text-gray-700 leading-relaxed flex items-start gap-2">
-                        <span className="text-blue-500 mt-1 select-none font-bold text-xs">•</span>
-                        <span>{cleanLine}</span>
+                      <div
+                        key={idx}
+                        style={{
+                          fontSize: '14px',
+                          color: '#334155',
+                          lineHeight: '1.5',
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: '8px',
+                          margin: 0,
+                          boxSizing: 'border-box'
+                        }}
+                      >
+                        <span
+                          style={{
+                            color: '#2155FF',
+                            marginTop: '2px',
+                            userSelect: 'none',
+                            fontWeight: 'bold',
+                            fontSize: '12px'
+                          }}
+                        >
+                          •
+                        </span>
+                        <span style={{ margin: 0, flex: 1 }}>{cleanLine}</span>
                       </div>
                     )
                   })}
@@ -86,8 +210,19 @@ export default React.forwardRef(function HistoryExportView({ projectName, histor
       </div>
 
       {/* Footer */}
-      <div className="border-t border-gray-200 mt-10 pt-4 text-center text-xs text-gray-400">
-        <p>Generado automáticamente por OrgChart Studio — Herramienta de Auditoría Organizacional</p>
+      <div
+        style={{
+          borderTop: '1px solid #E2E8F0',
+          marginTop: '40px',
+          paddingTop: '16px',
+          textAlign: 'center',
+          fontSize: '12px',
+          color: '#94A3B8'
+        }}
+      >
+        <p style={{ margin: 0 }}>
+          Generado automáticamente por OrgChart Studio — Herramienta de Auditoría Organizacional
+        </p>
       </div>
     </div>
   )

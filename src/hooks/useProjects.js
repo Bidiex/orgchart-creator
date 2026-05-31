@@ -1,10 +1,14 @@
 import { useReducer, useEffect } from 'react'
 import { v4 as uuidv4 } from 'uuid'
-import { getProjects, saveProject, deleteProject as dbDeleteProject } from '../utils/storageUtils'
+import { getProjects, saveProject, deleteProject as dbDeleteProject, safeLocalStorageSetItem, getProject } from '../utils/storageUtils'
 
 const initialState = {
   projects: [],
   loading: true
+}
+
+function sortProjectsByDate(projects) {
+  return [...projects].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
 }
 
 function projectsReducer(state, action) {
@@ -12,13 +16,13 @@ function projectsReducer(state, action) {
     case 'LOAD':
       return {
         ...state,
-        projects: action.payload,
+        projects: sortProjectsByDate(action.payload),
         loading: false
       }
     case 'ADD':
       return {
         ...state,
-        projects: [action.payload, ...state.projects] // Colocar el más nuevo al inicio
+        projects: sortProjectsByDate([action.payload, ...state.projects])
       }
     case 'DELETE':
       return {
@@ -28,7 +32,9 @@ function projectsReducer(state, action) {
     case 'UPDATE':
       return {
         ...state,
-        projects: state.projects.map(p => p.id === action.payload.id ? action.payload : p)
+        projects: sortProjectsByDate(
+          state.projects.map(p => p.id === action.payload.id ? action.payload : p)
+        )
       }
     default:
       return state
@@ -94,11 +100,57 @@ export function useProjects() {
     }
   }
 
+  /**
+   * Crea una copia del proyecto con su historial completo.
+   * @param {string} id - ID del proyecto a duplicar
+   * @returns {Object|null} El proyecto duplicado o null si falló
+   */
+  const duplicateProject = (id) => {
+    const project = state.projects.find(p => p.id === id) || getProject(id)
+    if (!project) return null
+
+    const newId = uuidv4()
+    const duplicatedProject = {
+      ...project,
+      id: newId,
+      name: `${project.name} — copia`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+
+    const success = saveProject(duplicatedProject)
+    if (success) {
+      // Duplicar también todo el historial
+      try {
+        const oldHistoryKey = `ocs_history_${id}`
+        const newHistoryKey = `ocs_history_${newId}`
+        const oldHistoryRaw = localStorage.getItem(oldHistoryKey)
+        if (oldHistoryRaw) {
+          const parsedHistory = JSON.parse(oldHistoryRaw)
+          if (Array.isArray(parsedHistory)) {
+            const newHistory = parsedHistory.map(entry => ({
+              ...entry,
+              projectId: newId
+            }))
+            safeLocalStorageSetItem(newHistoryKey, JSON.stringify(newHistory))
+          }
+        }
+      } catch (err) {
+        console.error('Error al duplicar el historial del proyecto:', err)
+      }
+
+      dispatch({ type: 'ADD', payload: duplicatedProject })
+      return duplicatedProject
+    }
+    return null
+  }
+
   return {
     projects: state.projects,
     loading: state.loading,
     createProject,
     deleteProject,
-    updateProject
+    updateProject,
+    duplicateProject
   }
 }

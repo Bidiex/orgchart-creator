@@ -1,9 +1,9 @@
 import React from 'react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { Folder, Trash2, ArrowRight } from 'lucide-react'
+import { Folder, Trash2, ArrowRight, Copy } from 'lucide-react'
 
-export default function ProjectCard({ project, onOpen, onDelete }) {
+export default function ProjectCard({ project, onOpen, onDelete, onDuplicate }) {
   const formattedDate = () => {
     try {
       return format(new Date(project.updatedAt), "d 'de' MMMM, yyyy - HH:mm", { locale: es })
@@ -30,6 +30,13 @@ export default function ProjectCard({ project, onOpen, onDelete }) {
     e.stopPropagation() // Detener navegación del card click
     if (window.confirm(`¿Estás seguro de que deseas eliminar el organigrama "${project.name}"?`)) {
       onDelete(project.id)
+    }
+  }
+
+  const handleDuplicateClick = (e) => {
+    e.stopPropagation() // Detener navegación del card click
+    if (onDuplicate) {
+      onDuplicate(project.id)
     }
   }
 
@@ -70,6 +77,14 @@ export default function ProjectCard({ project, onOpen, onDelete }) {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleDuplicateClick}
+            className="p-2 text-text-secondary hover:text-primary rounded-custom-pill hover:bg-primary/10 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
+            title="Duplicar proyecto"
+          >
+            <Copy className="w-4 h-4" />
+          </button>
+
           <button
             onClick={handleDeleteClick}
             className="p-2 text-text-secondary hover:text-danger rounded-custom-pill hover:bg-danger/10 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"

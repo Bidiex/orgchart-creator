@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useEditor } from '../hooks/useEditor'
 import { useHistory } from '../hooks/useHistory'
 import OrgCanvas from '../components/canvas/OrgCanvas'
@@ -6,8 +6,9 @@ import Toolbar from '../components/toolbar/Toolbar'
 import Sidebar from '../components/sidebar/Sidebar'
 import HistoryPanel from '../components/history/HistoryPanel'
 import HistoryExportView from '../components/history/HistoryExportView'
-import { PanelRightClose, PanelRightOpen } from 'lucide-react'
+import { PanelRightClose, PanelRightOpen, AlertTriangle } from 'lucide-react'
 import { getProject, saveProject } from '../utils/storageUtils'
+import Modal from '../components/shared/Modal'
 
 export default function Editor({ projectId, onBack }) {
   const {
@@ -16,6 +17,7 @@ export default function Editor({ projectId, onBack }) {
     selectedNodeId,
     projectName,
     loading,
+    isDirty,
     setNodes,
     setEdges,
     selectNode,
@@ -26,7 +28,8 @@ export default function Editor({ projectId, onBack }) {
     applyStyleToAll,
     reorganizeNodes,
     updateProjectName,
-    saveCurrentProject
+    saveCurrentProject,
+    toggleCollapse
   } = useEditor(projectId)
 
   const { history, saveVersion, restoreVersion } = useHistory(projectId)
@@ -34,6 +37,68 @@ export default function Editor({ projectId, onBack }) {
   const [showMiniMap, setShowMiniMap] = useState(true)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isHistoryOpen, setIsHistoryOpen] = useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+
+  // Soporte para atajos de teclado
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ignorar si el foco está en inputs o textareas o contenteditable
+      const active = document.activeElement
+      if (
+        active &&
+        (active.tagName === 'INPUT' ||
+          active.tagName === 'TEXTAREA' ||
+          active.isContentEditable)
+      ) {
+        return
+      }
+
+      // Ctrl+S - guardar versión
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault()
+        window.dispatchEvent(new CustomEvent('ocs-trigger-save'))
+        return
+      }
+
+      // Ctrl+Shift+H - toggle historia
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'h') {
+        e.preventDefault()
+        setIsHistoryOpen((prev) => !prev)
+        return
+      }
+
+      // Escape - deseleccionar y cerrar sidebar
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        selectNode(null)
+        setIsSidebarOpen(false)
+        return
+      }
+
+      // Delete o Backspace - eliminar nodo activo
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (selectedNodeId) {
+          e.preventDefault()
+          const node = nodes.find((n) => n.id === selectedNodeId)
+          if (!node) return
+          
+          const hasChildren = edges.some((edge) => edge.source === selectedNodeId)
+          if (hasChildren) {
+            setIsDeleteModalOpen(true)
+          } else {
+            if (window.confirm(`¿Estás seguro de que deseas eliminar el colaborador "${node.data?.label || 'Sin etiqueta'}"?`)) {
+              deleteNode(selectedNodeId, false)
+            }
+          }
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [selectedNodeId, nodes, edges, deleteNode, selectNode])
 
   // Refs para exportación
   const canvasRef = useRef(null)
@@ -106,6 +171,7 @@ export default function Editor({ projectId, onBack }) {
         onToggleMiniMap={() => setShowMiniMap(!showMiniMap)}
         isHistoryOpen={isHistoryOpen}
         onToggleHistory={() => setIsHistoryOpen(!isHistoryOpen)}
+        isDirty={isDirty}
       />
 
       {/* Zona Inferior: Historial + Canvas + Sidebar */}
@@ -129,6 +195,8 @@ export default function Editor({ projectId, onBack }) {
             addChildNode={addChildNode}
             reorganizeNodes={reorganizeNodes}
             showMiniMap={showMiniMap}
+            onUpdateNode={updateNode}
+            toggleCollapse={toggleCollapse}
           />
         </div>
 
@@ -166,6 +234,46 @@ export default function Editor({ projectId, onBack }) {
         projectName={projectName}
         history={history}
       />
+
+      {/* Modal de confirmación para borrado recursivo de nodo iniciado por atajo de teclado */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        title="Confirmar Eliminación"
+      >
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 text-warning">
+            <AlertTriangle className="w-8 h-8 shrink-0" />
+            <h4 className="font-semibold text-white text-base">Este nodo tiene colaboradores a cargo</h4>
+          </div>
+          
+          <p className="text-xs text-text-secondary leading-relaxed">
+            El colaborador <strong className="text-white">"{nodes.find(n => n.id === selectedNodeId)?.data?.label || 'Sin etiqueta'}"</strong> tiene una estructura descendiente en el organigrama. Si lo eliminas, todos sus subordinados directos e indirectos también serán eliminados del lienzo de trabajo.
+          </p>
+
+          <p className="text-xs text-text-muted">
+            Esta acción es irreversible y afectará el organigrama actual.
+          </p>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-border-custom">
+            <button
+              onClick={() => setIsDeleteModalOpen(false)}
+              className="px-5 py-2.5 rounded-custom-pill text-xs font-medium text-text-secondary hover:text-text-primary transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => {
+                deleteNode(selectedNodeId, true)
+                setIsDeleteModalOpen(false)
+              }}
+              className="bg-danger hover:bg-danger-hover text-white px-5 py-2.5 rounded-custom-pill text-xs font-medium transition-colors"
+            >
+              Eliminar todo
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

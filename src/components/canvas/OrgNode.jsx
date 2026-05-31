@@ -1,9 +1,65 @@
-import React from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Handle, Position } from '@xyflow/react'
-import { Plus } from 'lucide-react'
+import { Plus, ChevronDown, ChevronUp } from 'lucide-react'
 
 export default function OrgNode({ id, data, selected }) {
-  const { label, sublabel, style, badges, onAddChild } = data
+  const {
+    label,
+    sublabel,
+    style,
+    badges,
+    onAddChild,
+    onUpdateNode,
+    onToggleCollapse,
+    hasChildren,
+    descendantsCount
+  } = data
+
+  const [isEditingLabel, setIsEditingLabel] = useState(false)
+  const [editValue, setEditValue] = useState(label || '')
+  const isEditingRef = useRef(false)
+
+  // Sincronizar el valor editado con la etiqueta externa
+  useEffect(() => {
+    setEditValue(label || '')
+  }, [label])
+
+  const startEditing = () => {
+    isEditingRef.current = true
+    setIsEditingLabel(true)
+    setEditValue(label || '')
+  }
+
+  const confirmEdit = () => {
+    if (!isEditingRef.current) return
+    isEditingRef.current = false
+    setIsEditingLabel(false)
+    if (onUpdateNode) {
+      onUpdateNode(id, { label: editValue })
+    }
+  }
+
+  const cancelEdit = () => {
+    isEditingRef.current = false
+    setIsEditingLabel(false)
+    setEditValue(label || '')
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.stopPropagation()
+      confirmEdit()
+    } else if (e.key === 'Escape') {
+      e.stopPropagation()
+      cancelEdit()
+    }
+  }
+
+  const handleBlur = () => {
+    if (isEditingRef.current) {
+      confirmEdit()
+    }
+  }
 
   // Reconstruir estilos dinámicos del nodo
   const nodeStyle = {
@@ -38,8 +94,26 @@ export default function OrgNode({ id, data, selected }) {
       />
       
       {/* Contenido del Nodo */}
-      <div className="w-full truncate px-1">
-        <div className="font-semibold truncate text-white">{label || 'Sin etiqueta'}</div>
+      <div className="w-full truncate px-1" onDoubleClick={startEditing}>
+        {isEditingLabel ? (
+          <input
+            type="text"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onBlur={handleBlur}
+            autoFocus
+            className="bg-transparent border-none text-center outline-none focus:outline-none focus:ring-0 w-full p-0 m-0"
+            style={{
+              color: nodeStyle.color || '#FFFFFF',
+              fontSize: nodeStyle.fontSize || '13px',
+              fontWeight: nodeStyle.fontWeight || '600',
+              fontFamily: 'inherit'
+            }}
+          />
+        ) : (
+          <div className="font-semibold truncate text-white">{label || 'Sin etiqueta'}</div>
+        )}
         {sublabel && (
           <div className="text-[11px] opacity-75 mt-0.5 truncate text-text-secondary font-medium">
             {sublabel}
@@ -80,19 +154,48 @@ export default function OrgNode({ id, data, selected }) {
         )
       })}
 
-      {/* Botón flotante "+" para añadir nodo hijo */}
-      {onAddChild && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation() // Evitar seleccionar el nodo al presionar el botón
-            onAddChild(id)
-          }}
-          className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-6 h-6 bg-primary hover:bg-primary-hover text-white rounded-custom-pill flex items-center justify-center shadow-custom-hover opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all hover:scale-110 active:scale-95 z-20 border border-border-custom"
-          title="Añadir nodo hijo"
+      {/* Badge automático para nodos colapsados con descendientes ocultos */}
+      {data.isCollapsed && descendantsCount > 0 && (
+        <span
+          className="absolute -top-2.5 -right-2.5 px-2 py-0.5 text-[9px] font-bold rounded-custom-pill shadow-sm border border-black/10 z-10 bg-warning text-white animate-pulse"
+          title={`${descendantsCount} descendientes ocultos`}
         >
-          <Plus className="w-3.5 h-3.5" />
-        </button>
+          +{descendantsCount}
+        </span>
       )}
+
+      {/* Botones flotantes en el borde inferior (visibles en hover del grupo) */}
+      <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity no-export">
+        {onAddChild && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation() // Evitar seleccionar el nodo al presionar el botón
+              onAddChild(id)
+            }}
+            className="w-6 h-6 bg-primary hover:bg-primary-hover text-white rounded-custom-pill flex items-center justify-center shadow-custom-hover transition-all hover:scale-110 active:scale-95 border border-border-custom"
+            title="Añadir nodo hijo"
+          >
+            <Plus className="w-3.5 h-3.5" />
+          </button>
+        )}
+
+        {hasChildren && onToggleCollapse && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onToggleCollapse(id)
+            }}
+            className="w-6 h-6 bg-surface hover:bg-bg-muted text-text-secondary hover:text-text-primary rounded-custom-pill flex items-center justify-center shadow-custom-hover transition-all hover:scale-110 active:scale-95 border border-border-custom"
+            title={data.isCollapsed ? 'Expandir rama' : 'Colapsar rama'}
+          >
+            {data.isCollapsed ? (
+              <ChevronDown className="w-3.5 h-3.5 text-primary" />
+            ) : (
+              <ChevronUp className="w-3.5 h-3.5" />
+            )}
+          </button>
+        )}
+      </div>
 
       <Handle
         type="source"

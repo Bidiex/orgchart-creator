@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import { generateDiff } from '../utils/diffUtils'
+import { safeLocalStorageSetItem } from '../utils/storageUtils'
 
 export function useHistory(projectId) {
   const [history, setHistory] = useState([])
@@ -93,10 +94,12 @@ export function useHistory(projectId) {
         updatedHistory = updatedHistory.slice(0, 100)
       }
 
-      localStorage.setItem(getHistoryKey(projId), JSON.stringify(updatedHistory))
-      setHistory(updatedHistory)
+      const success = safeLocalStorageSetItem(getHistoryKey(projId), JSON.stringify(updatedHistory))
+      if (success) {
+        setHistory(updatedHistory)
+      }
       
-      return { success: true, version: nextVersion, entry: newEntry }
+      return { success, version: nextVersion, entry: newEntry }
     } catch (e) {
       console.error('Error al guardar versión en localStorage:', e)
       return { success: false, reason: 'ERROR', error: e }

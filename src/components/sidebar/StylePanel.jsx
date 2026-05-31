@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Sliders, CheckSquare } from 'lucide-react'
 import Modal from '../shared/Modal'
 
@@ -17,6 +17,22 @@ export default function StylePanel({ node, onUpdateNode, onApplyStyleToAll }) {
   const fontSize = style.fontSize !== undefined ? style.fontSize : 13
   const nodeWidth = style.width !== undefined ? style.width : 180
 
+  const [localBg, setLocalBg] = useState(backgroundColor)
+  const [localText, setLocalText] = useState(textColor)
+  const [localBorder, setLocalBorder] = useState(borderColor)
+
+  useEffect(() => {
+    setLocalBg(backgroundColor)
+  }, [backgroundColor])
+
+  useEffect(() => {
+    setLocalText(textColor)
+  }, [textColor])
+
+  useEffect(() => {
+    setLocalBorder(borderColor)
+  }, [borderColor])
+
   const handleStyleChange = (key, value) => {
     onUpdateNode(node.id, {
       style: {
@@ -25,11 +41,24 @@ export default function StylePanel({ node, onUpdateNode, onApplyStyleToAll }) {
     })
   }
 
+  const handleHexInputChange = (key, val, setter) => {
+    setter(val)
+    const hexRegex = /^#[0-9A-Fa-f]{6}$/
+    if (hexRegex.test(val)) {
+      handleStyleChange(key, val)
+    }
+  }
+
+  const handleColorPickerChange = (key, val, setter) => {
+    setter(val)
+    handleStyleChange(key, val)
+  }
+
   const handleApplyToAll = () => {
     const currentStyle = {
-      backgroundColor,
-      textColor,
-      borderColor,
+      backgroundColor: localBg,
+      textColor: localText,
+      borderColor: localBorder,
       borderWidth,
       borderStyle,
       borderRadius,
@@ -52,14 +81,14 @@ export default function StylePanel({ node, onUpdateNode, onApplyStyleToAll }) {
           <div className="flex items-center gap-2">
             <input
               type="color"
-              value={backgroundColor}
-              onChange={(e) => handleStyleChange('backgroundColor', e.target.value)}
+              value={localBg}
+              onChange={(e) => handleColorPickerChange('backgroundColor', e.target.value, setLocalBg)}
               className="w-10 h-10 bg-transparent border-0 rounded-custom-sm cursor-pointer"
             />
             <input
               type="text"
-              value={backgroundColor}
-              onChange={(e) => handleStyleChange('backgroundColor', e.target.value)}
+              value={localBg}
+              onChange={(e) => handleHexInputChange('backgroundColor', e.target.value, setLocalBg)}
               className="flex-1 bg-bg-app border border-border-custom text-text-primary text-sm rounded-custom-pill px-4 py-2 focus:outline-none focus:border-primary transition-colors text-center uppercase font-mono"
             />
           </div>
@@ -73,14 +102,14 @@ export default function StylePanel({ node, onUpdateNode, onApplyStyleToAll }) {
           <div className="flex items-center gap-2">
             <input
               type="color"
-              value={textColor}
-              onChange={(e) => handleStyleChange('textColor', e.target.value)}
+              value={localText}
+              onChange={(e) => handleColorPickerChange('textColor', e.target.value, setLocalText)}
               className="w-10 h-10 bg-transparent border-0 rounded-custom-sm cursor-pointer"
             />
             <input
               type="text"
-              value={textColor}
-              onChange={(e) => handleStyleChange('textColor', e.target.value)}
+              value={localText}
+              onChange={(e) => handleHexInputChange('textColor', e.target.value, setLocalText)}
               className="flex-1 bg-bg-app border border-border-custom text-text-primary text-sm rounded-custom-pill px-4 py-2 focus:outline-none focus:border-primary transition-colors text-center uppercase font-mono"
             />
           </div>
@@ -96,14 +125,14 @@ export default function StylePanel({ node, onUpdateNode, onApplyStyleToAll }) {
             <div className="flex items-center gap-2">
               <input
                 type="color"
-                value={borderColor}
-                onChange={(e) => handleStyleChange('borderColor', e.target.value)}
+                value={localBorder}
+                onChange={(e) => handleColorPickerChange('borderColor', e.target.value, setLocalBorder)}
                 className="w-8 h-8 bg-transparent border-0 rounded-custom-sm cursor-pointer"
               />
               <input
                 type="text"
-                value={borderColor}
-                onChange={(e) => handleStyleChange('borderColor', e.target.value)}
+                value={localBorder}
+                onChange={(e) => handleHexInputChange('borderColor', e.target.value, setLocalBorder)}
                 className="flex-1 bg-bg-app border border-border-custom text-text-primary text-xs rounded-custom-pill px-4 py-1.5 focus:outline-none focus:border-primary transition-colors text-center uppercase font-mono"
               />
             </div>

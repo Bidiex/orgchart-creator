@@ -21,7 +21,8 @@ const initialState = {
   edges: [],
   selectedNodeId: null,
   projectName: '',
-  loading: true
+  loading: true,
+  isDirty: false
 }
 
 function editorReducer(state, action) {
@@ -33,7 +34,8 @@ function editorReducer(state, action) {
         edges: action.payload.edges || [],
         projectName: action.payload.name || '',
         selectedNodeId: null,
-        loading: false
+        loading: false,
+        isDirty: false
       }
     case 'SET_NODES':
       return { ...state, nodes: action.payload }
@@ -48,7 +50,8 @@ function editorReducer(state, action) {
       return {
         ...state,
         nodes: newNodes,
-        edges: newEdges
+        edges: newEdges,
+        isDirty: true
       }
     }
     case 'DELETE_NODE': {
@@ -60,7 +63,8 @@ function editorReducer(state, action) {
         ...state,
         nodes: newNodes,
         edges: newEdges,
-        selectedNodeId: idsToDelete.includes(state.selectedNodeId) ? null : state.selectedNodeId
+        selectedNodeId: idsToDelete.includes(state.selectedNodeId) ? null : state.selectedNodeId,
+        isDirty: true
       }
     }
     case 'UPDATE_NODE': {
@@ -81,7 +85,7 @@ function editorReducer(state, action) {
         }
         return n
       })
-      return { ...state, nodes: newNodes }
+      return { ...state, nodes: newNodes, isDirty: true }
     }
     case 'APPLY_STYLE_TO_ALL': {
       const style = action.payload
@@ -95,10 +99,31 @@ function editorReducer(state, action) {
           }
         }
       }))
-      return { ...state, nodes: newNodes }
+      return { ...state, nodes: newNodes, isDirty: true }
     }
     case 'UPDATE_PROJECT_NAME':
-      return { ...state, projectName: action.payload }
+      return { ...state, projectName: action.payload, isDirty: true }
+    case 'TOGGLE_COLLAPSE': {
+      const nodeId = action.payload
+      // Calcular todos los descendientes del nodo
+      const descendants = getDescendants(nodeId, state.edges)
+      
+      const newNodes = state.nodes.map(n => {
+        if (n.id === nodeId) {
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              isCollapsed: !n.data.isCollapsed
+            }
+          }
+        }
+        return n
+      })
+      return { ...state, nodes: newNodes, isDirty: true }
+    }
+    case 'MARK_SAVED':
+      return { ...state, isDirty: false }
     default:
       return state
   }
@@ -280,8 +305,16 @@ export function useEditor(projectId) {
       }
     }
 
-    return saveProject(updatedProject)
+    const success = saveProject(updatedProject)
+    if (success) {
+      dispatch({ type: 'MARK_SAVED' })
+    }
+    return success
   }, [projectId, state.nodes, state.edges, state.projectName])
+
+  const toggleCollapse = useCallback((nodeId) => {
+    dispatch({ type: 'TOGGLE_COLLAPSE', payload: nodeId })
+  }, [])
 
   return {
     nodes: state.nodes,
@@ -289,6 +322,7 @@ export function useEditor(projectId) {
     selectedNodeId: state.selectedNodeId,
     projectName: state.projectName,
     loading: state.loading,
+    isDirty: state.isDirty,
     setNodes,
     setEdges,
     selectNode,
@@ -299,6 +333,7 @@ export function useEditor(projectId) {
     applyStyleToAll,
     reorganizeNodes,
     updateProjectName,
-    saveCurrentProject
+    saveCurrentProject,
+    toggleCollapse
   }
 }

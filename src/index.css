@@ -6,11 +6,12 @@
   --color-primary-hover: #1746E0;
   --color-primary-soft: rgba(33, 85, 255, 0.15);
 
-  /* Modern Dark Theme Colors */
+  /* Modern Dark Theme Colors (Fallback defaults) */
   --color-bg-app: #07080C;
   --color-bg-soft: #0B0F19;
   --color-bg-muted: #1E2538;
   --color-surface: #11131E;
+  --color-bg-toolbar: #11131E;
 
   --color-text-primary: #F8FAFC;
   --color-text-secondary: #94A3B8;
@@ -36,6 +37,35 @@
   
   /* Fonts */
   --font-sans: 'Inter', system-ui, sans-serif;
+}
+
+/* Redefinición dinámica de variables de color según el tema actual */
+:root {
+  /* Tema Claro (Por defecto) */
+  --color-bg-app: #f1f5f9;
+  --color-bg-soft: #f1f5f9;
+  --color-bg-muted: #e2e8f0;
+  --color-surface: #ffffff;
+  --color-bg-toolbar: #f8fafc;
+  --color-border-custom: #e2e8f0;
+  --color-border-soft: #e2e8f0;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #64748b;
+  --color-text-muted: #94a3b8;
+}
+
+html.dark {
+  /* Tema Oscuro */
+  --color-bg-app: #07080C;
+  --color-bg-soft: #0B0F19;
+  --color-bg-muted: #1E2538;
+  --color-surface: #11131E;
+  --color-bg-toolbar: #11131E;
+  --color-border-custom: #1E293B;
+  --color-border-soft: #0F172A;
+  --color-text-primary: #F8FAFC;
+  --color-text-secondary: #94A3B8;
+  --color-text-muted: #64748B;
 }
 
 /* Custom Base Layer for Dark Theme */

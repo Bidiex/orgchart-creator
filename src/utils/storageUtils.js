@@ -1,6 +1,42 @@
 const PROJECTS_KEY = 'ocs_projects'
 
 /**
+ * Guarda de forma segura un valor en localStorage verificando espacio y capturando errores de cuota.
+ */
+export function safeLocalStorageSetItem(key, value) {
+  // Antes de escribir, verificar espacio disponible con navigator.storage.estimate si está disponible
+  if (navigator.storage && navigator.storage.estimate) {
+    navigator.storage.estimate().then((estimate) => {
+      const usage = estimate.usage || 0
+      const quota = estimate.quota || 0
+      if (quota > 0 && usage > quota * 0.9) {
+        console.warn('Almacenamiento local casi lleno (más del 90% ocupado)')
+      }
+    }).catch((e) => {
+      console.warn('Error al verificar espacio de almacenamiento estimado:', e)
+    })
+  }
+
+  try {
+    localStorage.setItem(key, value)
+    return true
+  } catch (error) {
+    if (
+      error.name === 'QuotaExceededError' ||
+      error.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+      error.code === 22 ||
+      error.code === 1014
+    ) {
+      alert('Almacenamiento lleno. Elimina versiones antiguas del historial para continuar.')
+    } else {
+      alert(`Error al escribir en el almacenamiento: ${error.message}`)
+    }
+    console.error('Error al escribir en localStorage:', error)
+    return false
+  }
+}
+
+/**
  * Obtiene todos los proyectos almacenados en localStorage.
  * @returns {Array} Lista de proyectos o array vacío en caso de error o si no existen.
  */
@@ -38,8 +74,7 @@ export function saveProject(project) {
       })
     }
     
-    localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects))
-    return true
+    return safeLocalStorageSetItem(PROJECTS_KEY, JSON.stringify(projects))
   } catch (error) {
     console.error('Error al guardar el proyecto en localStorage:', error)
     return false
@@ -55,11 +90,13 @@ export function deleteProject(id) {
   try {
     const projects = getProjects()
     const filtered = projects.filter(p => p.id !== id)
-    localStorage.setItem(PROJECTS_KEY, JSON.stringify(filtered))
+    const success = safeLocalStorageSetItem(PROJECTS_KEY, JSON.stringify(filtered))
     
-    // También limpiamos el historial asociado al proyecto
-    localStorage.removeItem(`ocs_history_${id}`)
-    return true
+    if (success) {
+      // También limpiamos el historial asociado al proyecto
+      localStorage.removeItem(`ocs_history_${id}`)
+    }
+    return success
   } catch (error) {
     console.error('Error al eliminar el proyecto de localStorage:', error)
     return false
@@ -80,3 +117,4 @@ export function getProject(id) {
     return null
   }
 }
+

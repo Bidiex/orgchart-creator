@@ -45,16 +45,13 @@ export default function SaveButton({
     }
   }, [status])
 
-  // Soporte para atajo de teclado Ctrl+S / Cmd+S
+  // Soporte para atajo de teclado Ctrl+S / Cmd+S vía evento personalizado
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault()
-        handleSave()
-      }
+    const handleTriggerSave = () => {
+      handleSave()
     }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
+    window.addEventListener('ocs-trigger-save', handleTriggerSave)
+    return () => window.removeEventListener('ocs-trigger-save', handleTriggerSave)
   }, [handleSave])
 
   return (

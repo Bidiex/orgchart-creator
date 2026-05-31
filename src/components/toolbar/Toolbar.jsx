@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import { ArrowLeft, Plus, Map, Edit2, Check, History } from 'lucide-react'
+import { ArrowLeft, Plus, Map, Edit2, Check, History, Sun, Moon } from 'lucide-react'
 import SaveButton from './SaveButton'
 import ExportMenu from './ExportMenu'
+import { useTheme } from '../../hooks/useTheme'
 
 export default function Toolbar({
   projectId,
@@ -21,10 +22,12 @@ export default function Toolbar({
   showMiniMap,
   onToggleMiniMap,
   isHistoryOpen,
-  onToggleHistory
+  onToggleHistory,
+  isDirty
 }) {
   const [isEditing, setIsEditing] = useState(false)
   const [localName, setLocalName] = useState(projectName)
+  const { toggleTheme, isDark } = useTheme()
 
   useEffect(() => {
     setLocalName(projectName)
@@ -47,7 +50,7 @@ export default function Toolbar({
   }
 
   return (
-    <div className="bg-surface border-b border-border-custom px-6 py-4 flex items-center justify-between shadow-custom-default z-30 select-none">
+    <div className="bg-bg-toolbar border-b border-border-custom px-6 py-4 flex items-center justify-between shadow-custom-default z-30 select-none">
       {/* Zona Izquierda: Volver & Título */}
       <div className="flex items-center gap-4 flex-1 max-w-[50%]">
         <button
@@ -82,8 +85,11 @@ export default function Toolbar({
             </div>
           ) : (
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => setIsEditing(true)}>
-              <h2 className="text-sm sm:text-base font-bold text-white tracking-tight line-clamp-1">
-                {projectName || 'Proyecto sin título'}
+              <h2 className="text-sm sm:text-base font-bold text-white tracking-tight flex items-center gap-1.5 line-clamp-1">
+                <span>{projectName || 'Proyecto sin título'}</span>
+                {isDirty && (
+                  <span className="text-orange-500 animate-pulse font-bold text-xs" title="Cambios sin guardar">●</span>
+                )}
               </h2>
               <button
                 className="opacity-0 group-hover:opacity-100 p-1 text-text-muted hover:text-text-primary transition-opacity rounded-custom-pill hover:bg-bg-muted"
@@ -98,6 +104,15 @@ export default function Toolbar({
 
       {/* Zona Derecha: Acciones */}
       <div className="flex items-center gap-2 sm:gap-3">
+        {/* Toggle de Tema Claro/Oscuro */}
+        <button
+          onClick={toggleTheme}
+          className="p-2 rounded-custom-pill border border-border-custom text-text-secondary hover:text-text-primary hover:bg-bg-muted transition-colors"
+          title={isDark ? 'Tema claro' : 'Tema oscuro'}
+        >
+          {isDark ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
+        </button>
+
         {/* Toggle del Historial */}
         <button
           onClick={onToggleHistory}
