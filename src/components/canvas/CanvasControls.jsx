@@ -1,9 +1,19 @@
 import React from 'react'
 import { useReactFlow, Panel } from '@xyflow/react'
-import { ZoomIn, ZoomOut, Maximize, RefreshCw } from 'lucide-react'
+import { ZoomIn, ZoomOut, Maximize, RefreshCw, LayoutGrid, List } from 'lucide-react'
 
-export default function CanvasControls({ onReorganize }) {
+export default function CanvasControls({ onReorganize, layoutMode, onLayoutModeChange }) {
   const { zoomIn, zoomOut, fitView } = useReactFlow()
+
+  const handleLayoutModeChange = (mode) => {
+    if (onLayoutModeChange && layoutMode !== mode) {
+      onLayoutModeChange(mode)
+      // Ajustar la vista tras un delay para dar tiempo a React Flow a renderizar las nuevas posiciones
+      setTimeout(() => {
+        fitView({ duration: 400 })
+      }, 80)
+    }
+  }
 
   return (
     <Panel
@@ -32,6 +42,32 @@ export default function CanvasControls({ onReorganize }) {
         <Maximize className="w-4 h-4" />
       </button>
       
+      <div className="w-px h-5 bg-border-custom mx-1" />
+
+      {/* Selector de modo de distribución */}
+      <button
+        onClick={() => handleLayoutModeChange('horizontal')}
+        className={`p-2 rounded-custom-pill transition-all ${
+          layoutMode === 'horizontal'
+            ? 'bg-primary/10 text-primary border border-primary/20'
+            : 'text-text-secondary hover:text-text-primary hover:bg-bg-muted border border-transparent'
+        }`}
+        title="Distribución Horizontal (Fila)"
+      >
+        <LayoutGrid className="w-4 h-4" />
+      </button>
+      <button
+        onClick={() => handleLayoutModeChange('vertical')}
+        className={`p-2 rounded-custom-pill transition-all ${
+          layoutMode === 'vertical'
+            ? 'bg-primary/10 text-primary border border-primary/20'
+            : 'text-text-secondary hover:text-text-primary hover:bg-bg-muted border border-transparent'
+        }`}
+        title="Distribución Vertical (Columna)"
+      >
+        <List className="w-4 h-4" />
+      </button>
+
       <div className="w-px h-5 bg-border-custom mx-1" />
       
       <button

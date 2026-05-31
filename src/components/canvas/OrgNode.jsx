@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Handle, Position } from '@xyflow/react'
 import { Plus, ChevronDown, ChevronUp } from 'lucide-react'
+import { useLayout } from './LayoutContext'
 
 export default function OrgNode({ id, data, selected }) {
+  const { layoutMode } = useLayout()
   const {
     label,
     sublabel,
@@ -80,6 +82,8 @@ export default function OrgNode({ id, data, selected }) {
     ? 'shadow-[0_0_0_2px_rgba(33,85,255,0.4)] ring-2 ring-primary' 
     : 'shadow-custom-default'
 
+  const isVertical = layoutMode === 'vertical'
+
   return (
     <div
       style={nodeStyle}
@@ -88,9 +92,9 @@ export default function OrgNode({ id, data, selected }) {
       {/* Handles para orientación vertical */}
       <Handle
         type="target"
-        position={Position.Top}
+        position={isVertical ? Position.Left : Position.Top}
         className="w-2.5 h-2.5 !bg-primary border border-surface rounded-full !opacity-30 group-hover:!opacity-100 transition-opacity"
-        style={{ top: '-5px' }}
+        style={isVertical ? { left: '-5px' } : { top: '-5px' }}
       />
       
       {/* Contenido del Nodo */}
@@ -205,9 +209,9 @@ export default function OrgNode({ id, data, selected }) {
 
       <Handle
         type="source"
-        position={Position.Bottom}
+        position={isVertical ? Position.Right : Position.Bottom}
         className="w-2.5 h-2.5 !bg-primary border border-surface rounded-full !opacity-30 group-hover:!opacity-100 transition-opacity"
-        style={{ bottom: '-5px' }}
+        style={isVertical ? { right: '-5px' } : { bottom: '-5px' }}
       />
     </div>
   )

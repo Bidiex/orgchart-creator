@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { ArrowLeft, Plus, Map, Edit2, Check, History, Sun, Moon } from 'lucide-react'
+import { ArrowLeft, Plus, Map, Edit2, Check, History, Sun, Moon, Undo2, Redo2 } from 'lucide-react'
 import SaveButton from './SaveButton'
 import ExportMenu from './ExportMenu'
 import { useTheme } from '../../hooks/useTheme'
@@ -23,7 +23,11 @@ export default function Toolbar({
   onToggleMiniMap,
   isHistoryOpen,
   onToggleHistory,
-  isDirty
+  isDirty,
+  undo,
+  redo,
+  canUndo,
+  canRedo
 }) {
   const [isEditing, setIsEditing] = useState(false)
   const [localName, setLocalName] = useState(projectName)
@@ -158,6 +162,30 @@ export default function Toolbar({
           history={history}
           currentVersion={currentVersion}
         />
+
+        {/* Botones de Deshacer / Rehacer */}
+        <div className="flex items-center gap-1.5 no-export">
+          <button
+            onClick={undo}
+            disabled={!canUndo}
+            className={`p-2 rounded-custom-pill border border-border-custom text-text-secondary hover:text-text-primary hover:bg-bg-muted transition-colors ${
+              !canUndo ? 'opacity-40 pointer-events-none' : ''
+            }`}
+            title="Deshacer (Ctrl+Z)"
+          >
+            <Undo2 className="w-4.5 h-4.5" />
+          </button>
+          <button
+            onClick={redo}
+            disabled={!canRedo}
+            className={`p-2 rounded-custom-pill border border-border-custom text-text-secondary hover:text-text-primary hover:bg-bg-muted transition-colors ${
+              !canRedo ? 'opacity-40 pointer-events-none' : ''
+            }`}
+            title="Rehacer (Ctrl+Shift+Z)"
+          >
+            <Redo2 className="w-4.5 h-4.5" />
+          </button>
+        </div>
 
         {/* Botón de Guardado Reactivo */}
         <SaveButton

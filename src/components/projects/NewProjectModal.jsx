@@ -111,6 +111,7 @@ export default function NewProjectModal({ isOpen, onClose, onCreateProject }) {
     const initialSnapshot = {
       nodes: laidOutNodes,
       edges: parsedData.edges,
+      layoutMode: 'horizontal',
       viewport: { x: 0, y: 0, zoom: 1 }
     }
 

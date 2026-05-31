@@ -11,6 +11,7 @@ import OrgNode from './OrgNode'
 import OrgEdge from './OrgEdge'
 import CanvasControls from './CanvasControls'
 import { useTheme } from '../../hooks/useTheme'
+import { LayoutProvider } from './LayoutContext'
 
 // Estilos de React Flow (Requeridos en el core del canvas)
 import '@xyflow/react/dist/style.css'
@@ -34,7 +35,12 @@ function OrgCanvasContent({
   reorganizeNodes,
   showMiniMap,
   onUpdateNode,
-  toggleCollapse
+  toggleCollapse,
+  layoutMode,
+  onLayoutModeChange,
+  setSelectedNodes,
+  pushHistoryState,
+  checkAndCleanRedundantHistory
 }) {
   const { isDark } = useTheme()
   const dotColor = isDark ? '#273549' : '#cbd5e1'
@@ -42,6 +48,16 @@ function OrgCanvasContent({
   const onNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
     [setNodes]
+  )
+
+  const onSelectionChange = useCallback(
+    ({ nodes: selectedElements }) => {
+      if (setSelectedNodes) {
+        const selectedNodesOnly = selectedElements.filter(n => n.type === 'orgNode')
+        setSelectedNodes(selectedNodesOnly)
+      }
+    },
+    [setSelectedNodes]
   )
 
   const onEdgesChange = useCallback(
@@ -146,10 +162,13 @@ function OrgCanvasContent({
         edges={visibleEdges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
+        onSelectionChange={onSelectionChange}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
+        onNodeDragStart={pushHistoryState}
+        onNodeDragStop={checkAndCleanRedundantHistory}
         fitView
         fitViewOptions={{ padding: 0.2 }}
         minZoom={0.2}
@@ -160,7 +179,11 @@ function OrgCanvasContent({
         <Background variant="dots" color={dotColor} gap={18} size={1} />
         
         {/* Controles de canvas propios */}
-        <CanvasControls onReorganize={reorganizeNodes} />
+        <CanvasControls
+          onReorganize={reorganizeNodes}
+          layoutMode={layoutMode}
+          onLayoutModeChange={onLayoutModeChange}
+        />
         
         {/* MiniMap condicional */}
         {showMiniMap && (
@@ -185,7 +208,9 @@ function OrgCanvasContent({
 export default function OrgCanvas(props) {
   return (
     <ReactFlowProvider>
-      <OrgCanvasContent {...props} />
+      <LayoutProvider layoutMode={props.layoutMode}>
+        <OrgCanvasContent {...props} />
+      </LayoutProvider>
     </ReactFlowProvider>
   )
 }

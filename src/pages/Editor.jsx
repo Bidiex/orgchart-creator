@@ -9,6 +9,7 @@ import HistoryExportView from '../components/history/HistoryExportView'
 import { PanelRightClose, PanelRightOpen, AlertTriangle } from 'lucide-react'
 import { getProject, saveProject } from '../utils/storageUtils'
 import Modal from '../components/shared/Modal'
+import AlignmentToolbar from '../components/toolbar/AlignmentToolbar'
 
 export default function Editor({ projectId, onBack }) {
   const {
@@ -29,7 +30,17 @@ export default function Editor({ projectId, onBack }) {
     reorganizeNodes,
     updateProjectName,
     saveCurrentProject,
-    toggleCollapse
+    toggleCollapse,
+    layoutMode,
+    setLayoutMode,
+    selectedNodes,
+    setSelectedNodes,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    pushHistoryState,
+    checkAndCleanRedundantHistory
   } = useEditor(projectId)
 
   const { history, saveVersion, restoreVersion } = useHistory(projectId)
@@ -50,6 +61,33 @@ export default function Editor({ projectId, onBack }) {
           active.tagName === 'TEXTAREA' ||
           active.isContentEditable)
       ) {
+        return
+      }
+
+      // Ctrl+Z - deshacer
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
+        e.preventDefault()
+        if (canUndo) {
+          undo()
+        }
+        return
+      }
+
+      // Ctrl+Shift+Z - rehacer
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'z') {
+        e.preventDefault()
+        if (canRedo) {
+          redo()
+        }
+        return
+      }
+
+      // Ctrl+Y - rehacer
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'y') {
+        e.preventDefault()
+        if (canRedo) {
+          redo()
+        }
         return
       }
 
@@ -98,7 +136,7 @@ export default function Editor({ projectId, onBack }) {
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [selectedNodeId, nodes, edges, deleteNode, selectNode])
+  }, [selectedNodeId, nodes, edges, deleteNode, selectNode, undo, redo, canUndo, canRedo])
 
   // Refs para exportación
   const canvasRef = useRef(null)
@@ -106,6 +144,19 @@ export default function Editor({ projectId, onBack }) {
 
   // Proyecto completo para backup JSON
   const fullProject = getProject(projectId)
+
+  // Lógica de alineación y distribución
+  const handleAlignOrDistribute = (alignedNodes) => {
+    pushHistoryState()
+    const updatedNodesMap = new Map(alignedNodes.map(n => [n.id, n]))
+    const newNodes = nodes.map(node => {
+      if (updatedNodesMap.has(node.id)) {
+        return updatedNodesMap.get(node.id)
+      }
+      return node
+    })
+    setNodes(newNodes)
+  }
 
   // Lógica de restauración de versión
   const handleRestore = (entry) => {
@@ -172,6 +223,10 @@ export default function Editor({ projectId, onBack }) {
         isHistoryOpen={isHistoryOpen}
         onToggleHistory={() => setIsHistoryOpen(!isHistoryOpen)}
         isDirty={isDirty}
+        undo={undo}
+        redo={redo}
+        canUndo={canUndo}
+        canRedo={canRedo}
       />
 
       {/* Zona Inferior: Historial + Canvas + Sidebar */}
@@ -197,6 +252,15 @@ export default function Editor({ projectId, onBack }) {
             showMiniMap={showMiniMap}
             onUpdateNode={updateNode}
             toggleCollapse={toggleCollapse}
+            layoutMode={layoutMode}
+            onLayoutModeChange={setLayoutMode}
+            setSelectedNodes={setSelectedNodes}
+            pushHistoryState={pushHistoryState}
+            checkAndCleanRedundantHistory={checkAndCleanRedundantHistory}
+          />
+          <AlignmentToolbar
+            selectedNodes={selectedNodes}
+            onAlign={handleAlignOrDistribute}
           />
         </div>
 

@@ -1,7 +1,8 @@
-import { useReducer, useEffect, useCallback } from 'react'
+import { useReducer, useEffect, useCallback, useRef } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import { getProject, saveProject } from '../utils/storageUtils'
 import { applyDagreLayout } from '../utils/layoutUtils'
+import { useUndoRedo } from './useUndoRedo'
 
 const DEFAULT_NODE_STYLE = {
   backgroundColor: '#1E2538',
@@ -23,7 +24,9 @@ const initialState = {
   selectedNodeId: null,
   projectName: '',
   loading: true,
-  isDirty: false
+  isDirty: false,
+  layoutMode: 'horizontal',
+  selectedNodes: []
 }
 
 function editorReducer(state, action) {
@@ -34,14 +37,20 @@ function editorReducer(state, action) {
         nodes: action.payload.nodes || [],
         edges: action.payload.edges || [],
         projectName: action.payload.name || '',
+        layoutMode: action.payload.layoutMode || 'horizontal',
         selectedNodeId: null,
         loading: false,
-        isDirty: false
+        isDirty: false,
+        selectedNodes: []
       }
     case 'SET_NODES':
-      return { ...state, nodes: action.payload }
+      return { ...state, nodes: action.payload, isDirty: true }
     case 'SET_EDGES':
       return { ...state, edges: action.payload }
+    case 'SET_LAYOUT_MODE':
+      return { ...state, layoutMode: action.payload, isDirty: true }
+    case 'SET_SELECTED_NODES':
+      return { ...state, selectedNodes: action.payload }
     case 'SELECT_NODE':
       return { ...state, selectedNodeId: action.payload }
     case 'ADD_NODE_AND_EDGE': {
@@ -148,22 +157,65 @@ function getDescendants(nodeId, edges) {
 export function useEditor(projectId) {
   const [state, dispatch] = useReducer(editorReducer, initialState)
 
+  const {
+    canUndo,
+    canRedo,
+    pushState,
+    undo,
+    redo,
+    clearHistory,
+    cleanLastHistoryIfIdentical
+  } = useUndoRedo()
+
+  const isTypingRef = useRef(false)
+  const typingTimeoutRef = useRef(null)
+
+  // Helper to push pre-mutation state
+  const pushHistoryState = useCallback(() => {
+    pushState({ nodes: state.nodes, edges: state.edges })
+  }, [pushState, state.nodes, state.edges])
+
+  // Helper to clean up history if current state is identical to pre-mutation
+  const checkAndCleanRedundantHistory = useCallback(() => {
+    cleanLastHistoryIfIdentical({ nodes: state.nodes, edges: state.edges })
+  }, [cleanLastHistoryIfIdentical, state.nodes, state.edges])
+
+  // Clear typing timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current)
+      }
+    }
+  }, [])
+
   // Carga inicial del proyecto
   useEffect(() => {
     if (projectId) {
       const project = getProject(projectId)
       if (project) {
+        const pNodes = project.currentSnapshot?.nodes || []
+        const pEdges = project.currentSnapshot?.edges || []
+        const pLayoutMode = project.currentSnapshot?.layoutMode || 'horizontal'
+
         dispatch({
           type: 'INITIALIZE',
           payload: {
-            nodes: project.currentSnapshot?.nodes || [],
-            edges: project.currentSnapshot?.edges || [],
-            name: project.name
+            nodes: pNodes,
+            edges: pEdges,
+            name: project.name,
+            layoutMode: pLayoutMode
           }
         })
+        clearHistory()
+        // Reset typing tracking
+        isTypingRef.current = false
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current)
+        }
       }
     }
-  }, [projectId])
+  }, [projectId, clearHistory])
 
   const setNodes = useCallback((nodes) => {
     dispatch({ type: 'SET_NODES', payload: typeof nodes === 'function' ? nodes(state.nodes) : nodes })
@@ -181,10 +233,27 @@ export function useEditor(projectId) {
     dispatch({ type: 'UPDATE_PROJECT_NAME', payload: name })
   }, [])
 
+  const performUndo = useCallback(() => {
+    const prevState = undo({ nodes: state.nodes, edges: state.edges })
+    if (prevState) {
+      dispatch({ type: 'SET_NODES', payload: prevState.nodes })
+      dispatch({ type: 'SET_EDGES', payload: prevState.edges })
+    }
+  }, [undo, state.nodes, state.edges])
+
+  const performRedo = useCallback(() => {
+    const nextState = redo({ nodes: state.nodes, edges: state.edges })
+    if (nextState) {
+      dispatch({ type: 'SET_NODES', payload: nextState.nodes })
+      dispatch({ type: 'SET_EDGES', payload: nextState.edges })
+    }
+  }, [redo, state.nodes, state.edges])
+
   /**
    * Añade un nodo raíz suelto al canvas
    */
   const addRootNode = useCallback(() => {
+    pushHistoryState()
     const id = uuidv4()
     const newNode = {
       id,
@@ -202,7 +271,7 @@ export function useEditor(projectId) {
       type: 'ADD_NODE_AND_EDGE',
       payload: { node: newNode, edge: null }
     })
-  }, [])
+  }, [pushHistoryState])
 
   /**
    * Añade un nodo hijo y lo conecta con su padre
@@ -211,6 +280,7 @@ export function useEditor(projectId) {
     const parentNode = state.nodes.find(n => n.id === parentId)
     if (!parentNode) return
 
+    pushHistoryState()
     const childId = uuidv4()
     
     // Posición inicial ligeramente abajo del padre para mejor visualización previa al layout
@@ -249,12 +319,13 @@ export function useEditor(projectId) {
       type: 'ADD_NODE_AND_EDGE',
       payload: { node: childNode, edge: newEdge }
     })
-  }, [state.nodes])
+  }, [state.nodes, pushHistoryState])
 
   /**
    * Elimina un nodo del canvas (de forma recursiva si se especifica)
    */
   const deleteNode = useCallback((id, recursive = false) => {
+    pushHistoryState()
     if (recursive) {
       const descendants = getDescendants(id, state.edges)
       const idsToDelete = [id, ...descendants]
@@ -262,30 +333,54 @@ export function useEditor(projectId) {
     } else {
       dispatch({ type: 'DELETE_NODE', payload: id })
     }
-  }, [state.edges])
+  }, [state.edges, pushHistoryState])
 
   /**
    * Actualiza los datos de un nodo
    */
   const updateNode = useCallback((id, data) => {
+    const isTextEdit = data && ('label' in data || 'sublabel' in data || 'department' in data)
+
+    if (isTextEdit) {
+      if (!isTypingRef.current) {
+        pushHistoryState()
+        isTypingRef.current = true
+      }
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current)
+      }
+      typingTimeoutRef.current = setTimeout(() => {
+        isTypingRef.current = false
+        checkAndCleanRedundantHistory()
+      }, 1000)
+    } else {
+      pushHistoryState()
+      isTypingRef.current = false
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current)
+      }
+    }
+
     dispatch({ type: 'UPDATE_NODE', payload: { id, data } })
-  }, [])
+  }, [pushHistoryState, checkAndCleanRedundantHistory])
 
   /**
    * Aplica un estilo a todos los nodos del canvas
    */
   const applyStyleToAll = useCallback((style) => {
+    pushHistoryState()
     dispatch({ type: 'APPLY_STYLE_TO_ALL', payload: style })
-  }, [])
+  }, [pushHistoryState])
 
   /**
    * Reorganiza los nodos usando el algoritmo de Dagre
    */
   const reorganizeNodes = useCallback(() => {
     if (state.nodes.length === 0) return
-    const laidOutNodes = applyDagreLayout(state.nodes, state.edges)
+    pushHistoryState()
+    const laidOutNodes = applyDagreLayout(state.nodes, state.edges, { layoutMode: state.layoutMode })
     dispatch({ type: 'SET_NODES', payload: laidOutNodes })
-  }, [state.nodes, state.edges])
+  }, [state.nodes, state.edges, state.layoutMode, pushHistoryState])
 
   /**
    * Persiste el estado actual del canvas en localStorage
@@ -302,6 +397,7 @@ export function useEditor(projectId) {
       currentSnapshot: {
         nodes: state.nodes,
         edges: state.edges,
+        layoutMode: state.layoutMode,
         viewport: { x: 0, y: 0, zoom: 1 } // Ajustable con React Flow instance
       }
     }
@@ -311,10 +407,26 @@ export function useEditor(projectId) {
       dispatch({ type: 'MARK_SAVED' })
     }
     return success
-  }, [projectId, state.nodes, state.edges, state.projectName])
+  }, [projectId, state.nodes, state.edges, state.projectName, state.layoutMode])
 
   const toggleCollapse = useCallback((nodeId) => {
+    pushHistoryState()
     dispatch({ type: 'TOGGLE_COLLAPSE', payload: nodeId })
+  }, [pushHistoryState])
+
+  const setLayoutMode = useCallback((mode) => {
+    pushHistoryState()
+    dispatch({ type: 'SET_LAYOUT_MODE', payload: mode })
+    
+    // Recalcular el layout de inmediato usando el nuevo modo
+    setNodes(prevNodes => {
+      if (prevNodes.length === 0) return prevNodes
+      return applyDagreLayout(prevNodes, state.edges, { layoutMode: mode })
+    })
+  }, [state.edges, setNodes, pushHistoryState])
+
+  const setSelectedNodes = useCallback((selected) => {
+    dispatch({ type: 'SET_SELECTED_NODES', payload: selected })
   }, [])
 
   return {
@@ -324,6 +436,10 @@ export function useEditor(projectId) {
     projectName: state.projectName,
     loading: state.loading,
     isDirty: state.isDirty,
+    layoutMode: state.layoutMode,
+    selectedNodes: state.selectedNodes || [],
+    setLayoutMode,
+    setSelectedNodes,
     setNodes,
     setEdges,
     selectNode,
@@ -335,6 +451,12 @@ export function useEditor(projectId) {
     reorganizeNodes,
     updateProjectName,
     saveCurrentProject,
-    toggleCollapse
+    toggleCollapse,
+    undo: performUndo,
+    redo: performRedo,
+    canUndo,
+    canRedo,
+    pushHistoryState,
+    checkAndCleanRedundantHistory
   }
 }
