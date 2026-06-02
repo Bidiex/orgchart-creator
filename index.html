@@ -9,7 +9,7 @@
       const redirect = sessionStorage.getItem('redirect');
       if (redirect && redirect !== '/') {
         sessionStorage.removeItem('redirect');
-        window.history.replaceState(null, '', '/orgchart-studio' + redirect);
+        window.history.replaceState(null, '', '/orgchart-creator' + redirect);
       }
     </script>
     
