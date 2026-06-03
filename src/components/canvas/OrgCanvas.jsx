@@ -1,11 +1,12 @@
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback, useMemo, useEffect } from 'react'
 import {
   ReactFlow,
   Background,
   MiniMap,
   ReactFlowProvider,
   applyNodeChanges,
-  applyEdgeChanges
+  applyEdgeChanges,
+  useReactFlow
 } from '@xyflow/react'
 import OrgNode from './OrgNode'
 import OrgEdge from './OrgEdge'
@@ -44,6 +45,17 @@ function OrgCanvasContent({
 }) {
   const { isDark } = useTheme()
   const dotColor = isDark ? '#273549' : '#cbd5e1'
+  const { fitView } = useReactFlow()
+
+  useEffect(() => {
+    const handleFitView = () => {
+      fitView({ duration: 400 })
+    }
+    window.addEventListener('ocs-fit-view', handleFitView)
+    return () => {
+      window.removeEventListener('ocs-fit-view', handleFitView)
+    }
+  }, [fitView])
 
   const onNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
@@ -76,6 +88,18 @@ function OrgCanvasContent({
       childrenMap[edge.source].push(edge.target)
     })
 
+    // Crear un mapa rápido de id -> headcount
+    const headcountMap = {}
+    nodes.forEach(node => {
+      const hc = node.data?.headcount
+      if (hc !== undefined && hc !== null) {
+        const num = Number(hc)
+        if (!isNaN(num) && num > 0) {
+          headcountMap[node.id] = num
+        }
+      }
+    })
+
     // Helper recursivo para contar descendientes totales
     const countDescendants = (nodeId) => {
       let count = 0
@@ -95,9 +119,31 @@ function OrgCanvasContent({
       return count
     }
 
+    // Helper recursivo para sumar el headcount de todos los descendientes
+    const sumDescendantsHeadcount = (nodeId) => {
+      let sum = 0
+      const queue = [nodeId]
+      const visited = new Set([nodeId])
+      while (queue.length > 0) {
+        const current = queue.shift()
+        const children = childrenMap[current] || []
+        for (const child of children) {
+          if (!visited.has(child)) {
+            visited.add(child)
+            if (headcountMap[child]) {
+              sum += headcountMap[child]
+            }
+            queue.push(child)
+          }
+        }
+      }
+      return sum
+    }
+
     return nodes.map((node) => {
       const hasChildren = (childrenMap[node.id] || []).length > 0
       const descendantsCount = hasChildren ? countDescendants(node.id) : 0
+      const descendantsHeadcount = hasChildren ? sumDescendantsHeadcount(node.id) : 0
       return {
         ...node,
         data: {
@@ -106,7 +152,8 @@ function OrgCanvasContent({
           onUpdateNode: onUpdateNode,
           onToggleCollapse: toggleCollapse,
           hasChildren,
-          descendantsCount
+          descendantsCount,
+          descendantsHeadcount
         }
       }
     })

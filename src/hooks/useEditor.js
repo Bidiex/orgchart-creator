@@ -114,23 +114,7 @@ function editorReducer(state, action) {
     case 'UPDATE_PROJECT_NAME':
       return { ...state, projectName: action.payload, isDirty: true }
     case 'TOGGLE_COLLAPSE': {
-      const nodeId = action.payload
-      // Calcular todos los descendientes del nodo
-      const descendants = getDescendants(nodeId, state.edges)
-      
-      const newNodes = state.nodes.map(n => {
-        if (n.id === nodeId) {
-          return {
-            ...n,
-            data: {
-              ...n.data,
-              isCollapsed: !n.data.isCollapsed
-            }
-          }
-        }
-        return n
-      })
-      return { ...state, nodes: newNodes, isDirty: true }
+      return { ...state, nodes: action.payload, isDirty: true }
     }
     case 'MARK_SAVED':
       return { ...state, isDirty: false }
@@ -264,7 +248,8 @@ export function useEditor(projectId) {
         sublabel: 'Cargo / Departamento',
         style: { ...DEFAULT_NODE_STYLE },
         badges: [],
-        isCollapsed: false
+        isCollapsed: false,
+        childLayout: 'horizontal'
       }
     }
     dispatch({
@@ -298,7 +283,8 @@ export function useEditor(projectId) {
         sublabel: 'Cargo / Departamento',
         style: { ...DEFAULT_NODE_STYLE },
         badges: [],
-        isCollapsed: false
+        isCollapsed: false,
+        childLayout: 'horizontal'
       }
     }
 
@@ -362,7 +348,41 @@ export function useEditor(projectId) {
     }
 
     dispatch({ type: 'UPDATE_NODE', payload: { id, data } })
-  }, [pushHistoryState, checkAndCleanRedundantHistory])
+
+    // Si cambia childLayout, forzar reorganización del layout de inmediato
+    if (data && 'childLayout' in data) {
+      setNodes(prevNodes => {
+        const updatedNodes = prevNodes.map(n => {
+          if (n.id === id) {
+            return {
+              ...n,
+              data: {
+                ...n.data,
+                ...data
+              }
+            }
+          }
+          return n
+        })
+
+        const nodeHeights = {}
+        updatedNodes.forEach(node => {
+          const domNode = document.querySelector(`.react-flow__node[data-id="${node.id}"]`)
+          if (domNode) {
+            const rect = domNode.getBoundingClientRect()
+            if (rect && rect.height > 0) {
+              nodeHeights[node.id] = rect.height
+            }
+          }
+        })
+
+        return applyDagreLayout(updatedNodes, state.edges, { 
+          layoutMode: state.layoutMode,
+          nodeHeights
+        })
+      })
+    }
+  }, [state.edges, state.layoutMode, setNodes, pushHistoryState, checkAndCleanRedundantHistory])
 
   /**
    * Aplica un estilo a todos los nodos del canvas
@@ -378,7 +398,23 @@ export function useEditor(projectId) {
   const reorganizeNodes = useCallback(() => {
     if (state.nodes.length === 0) return
     pushHistoryState()
-    const laidOutNodes = applyDagreLayout(state.nodes, state.edges, { layoutMode: state.layoutMode })
+
+    // Medir la altura de los nodos desde el DOM si ya están renderizados
+    const nodeHeights = {}
+    state.nodes.forEach(node => {
+      const domNode = document.querySelector(`.react-flow__node[data-id="${node.id}"]`)
+      if (domNode) {
+        const rect = domNode.getBoundingClientRect()
+        if (rect && rect.height > 0) {
+          nodeHeights[node.id] = rect.height
+        }
+      }
+    })
+
+    const laidOutNodes = applyDagreLayout(state.nodes, state.edges, { 
+      layoutMode: state.layoutMode,
+      nodeHeights
+    })
     dispatch({ type: 'SET_NODES', payload: laidOutNodes })
   }, [state.nodes, state.edges, state.layoutMode, pushHistoryState])
 
@@ -411,19 +447,74 @@ export function useEditor(projectId) {
 
   const toggleCollapse = useCallback((nodeId) => {
     pushHistoryState()
-    dispatch({ type: 'TOGGLE_COLLAPSE', payload: nodeId })
-  }, [pushHistoryState])
+    
+    // 1. Toggle the collapsed state of the target node
+    const updatedNodes = state.nodes.map(n => {
+      if (n.id === nodeId) {
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            isCollapsed: !n.data.isCollapsed
+          }
+        }
+      }
+      return n
+    })
+
+    // 2. Measure actual DOM node heights for currently visible nodes
+    const nodeHeights = {}
+    updatedNodes.forEach(node => {
+      const domNode = document.querySelector(`.react-flow__node[data-id="${node.id}"]`)
+      if (domNode) {
+        const rect = domNode.getBoundingClientRect()
+        if (rect && rect.height > 0) {
+          nodeHeights[node.id] = rect.height
+        }
+      }
+    })
+
+    // 3. Recalculate layout with visibleOnly: true
+    const laidOutNodes = applyDagreLayout(updatedNodes, state.edges, {
+      layoutMode: state.layoutMode,
+      nodeHeights,
+      visibleOnly: true
+    })
+
+    // 4. Dispatch the updated nodes list
+    dispatch({ type: 'TOGGLE_COLLAPSE', payload: laidOutNodes })
+
+    // 5. If change is significant (> 3 descendants), trigger a smooth fitView
+    const descendants = getDescendants(nodeId, state.edges)
+    if (descendants.length > 3) {
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('ocs-fit-view'))
+      }, 100)
+    }
+  }, [state.nodes, state.edges, state.layoutMode, dispatch, pushHistoryState])
 
   const setLayoutMode = useCallback((mode) => {
     pushHistoryState()
     dispatch({ type: 'SET_LAYOUT_MODE', payload: mode })
     
+    // Medir la altura de los nodos desde el DOM si ya están renderizados
+    const nodeHeights = {}
+    state.nodes.forEach(node => {
+      const domNode = document.querySelector(`.react-flow__node[data-id="${node.id}"]`)
+      if (domNode) {
+        const rect = domNode.getBoundingClientRect()
+        if (rect && rect.height > 0) {
+          nodeHeights[node.id] = rect.height
+        }
+      }
+    })
+
     // Recalcular el layout de inmediato usando el nuevo modo
     setNodes(prevNodes => {
       if (prevNodes.length === 0) return prevNodes
-      return applyDagreLayout(prevNodes, state.edges, { layoutMode: mode })
+      return applyDagreLayout(prevNodes, state.edges, { layoutMode: mode, nodeHeights })
     })
-  }, [state.edges, setNodes, pushHistoryState])
+  }, [state.edges, state.nodes, setNodes, pushHistoryState])
 
   const setSelectedNodes = useCallback((selected) => {
     dispatch({ type: 'SET_SELECTED_NODES', payload: selected })

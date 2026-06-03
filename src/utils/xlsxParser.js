@@ -109,6 +109,22 @@ export function parseXLSXToNodes(file) {
           const originalId = String(row.id).trim()
           const internalId = idMap[originalId]
 
+          let headcountVal = null
+          if (row.hasOwnProperty('headcount') && row.headcount !== undefined && row.headcount !== null && row.headcount !== '') {
+            const parsed = Number(row.headcount)
+            if (!isNaN(parsed) && parsed >= 1) {
+              headcountVal = Math.floor(parsed)
+            }
+          }
+
+          let childLayoutVal = 'horizontal'
+          if (row.hasOwnProperty('childLayout') && row.childLayout !== undefined && row.childLayout !== null && row.childLayout !== '') {
+            const rawVal = String(row.childLayout).trim().toLowerCase()
+            if (rawVal === 'vertical') {
+              childLayoutVal = 'vertical'
+            }
+          }
+
           return {
             id: internalId,
             type: 'orgNode',
@@ -117,6 +133,8 @@ export function parseXLSXToNodes(file) {
               label: String(row.label || '').trim(),
               sublabel: row.sublabel ? String(row.sublabel).trim() : '',
               department: row.department ? String(row.department).trim() : '',
+              headcount: headcountVal,
+              childLayout: childLayoutVal,
               style: {
                 backgroundColor: row.backgroundColor || '#1E2538',
                 textColor: '#FFFFFF',

@@ -130,3 +130,8 @@ html.dark {
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb) transparent;
 }
+
+/* Transición suave para el reposicionamiento de nodos en React Flow */
+.react-flow__node {
+  transition: transform 0.25s ease !important;
+}

@@ -176,6 +176,8 @@ orgchart-studio/
     label: "Gerencia de Tecnología",
     sublabel: "Área de Sistemas",     // Opcional: cargo, área, departamento
     department: "Tecnología",         // Para agrupación visual futura
+    headcount: null,                  // Opcional: null = no mostrar | number >= 1 = mostrar
+    childLayout: 'horizontal',        // 'horizontal' | 'vertical' (distribución de hijos directos)
 
     // Estilos del nodo
     style: {
@@ -286,13 +288,13 @@ La pantalla inicial muestra todos los proyectos guardados como tarjetas con:
 
 El archivo `public/template.xlsx` es descargable desde la UI. Estructura de columnas:
 
-| id | label | sublabel | parentId | backgroundColor | badgeText | badgeColor |
-|----|-------|----------|----------|----------------|-----------|------------|
-| 1 | Presidencia | | | #1e3a5f | | |
-| 2 | Secretaría General | Administración | 1 | #1e3a5f | | |
-| 3 | Dirección Jurídica | | 1 | #1e3a5f | | |
-| 4 | VP Comercial | | 1 | #2d5a8e | | |
-| 5 | Director Pyme | Canal Digital | 4 | #2d5a8e | Nuevo | #22c55e |
+| id | label | sublabel | parentId | backgroundColor | badgeText | badgeColor | headcount | childLayout |
+|----|-------|----------|----------|----------------|-----------|------------|-----------|-------------|
+| 1 | Presidencia | | | #1e3a5f | | | 1 | vertical |
+| 2 | Secretaría General | Administración | 1 | #1e3a5f | | | 3 | horizontal |
+| 3 | Dirección Jurídica | | 1 | #1e3a5f | | | 1 | horizontal |
+| 4 | VP Comercial | | 1 | #2d5a8e | | | | horizontal |
+| 5 | Director Pyme | Canal Digital | 4 | #2d5a8e | Nuevo | #22c55e | 2 | horizontal |
 
 **Reglas de la plantilla:**
 - `id`: número o texto único, obligatorio
@@ -301,6 +303,8 @@ El archivo `public/template.xlsx` es descargable desde la UI. Estructura de colu
 - `parentId`: id del nodo padre; vacío = nodo raíz (solo puede haber uno)
 - `backgroundColor`: hex, opcional (usa color por defecto si está vacío)
 - `badgeText` / `badgeColor`: opcionales, se ignoran si están vacíos
+- `headcount`: número entero opcional >= 1 (deja vacío para no mostrar)
+- `childLayout`: opcional ('horizontal' o 'vertical'), por defecto 'horizontal'
 
 #### Flujo de importación
 
@@ -618,15 +622,34 @@ export function parseXLSXToNodes(file) {
         const idMap = {}
         rows.forEach(row => { idMap[String(row.id)] = uuid() })
 
-        const nodes = rows.map(row => ({
-          id: idMap[String(row.id)],
-          type: 'orgNode',
-          position: { x: 0, y: 0 },          // dagre calculará las posiciones reales
-          data: {
-            label: String(row.label),
-            sublabel: row.sublabel ? String(row.sublabel) : '',
-            department: row.department ? String(row.department) : '',
-            style: {
+        const nodes = rows.map(row => {
+          let headcountVal = null
+          if (row.hasOwnProperty('headcount') && row.headcount !== undefined && row.headcount !== null && row.headcount !== '') {
+            const parsed = Number(row.headcount)
+            if (!isNaN(parsed) && parsed >= 1) {
+              headcountVal = Math.floor(parsed)
+            }
+          }
+
+          let childLayoutVal = 'horizontal'
+          if (row.hasOwnProperty('childLayout') && row.childLayout !== undefined && row.childLayout !== null && row.childLayout !== '') {
+            const rawVal = String(row.childLayout).trim().toLowerCase()
+            if (rawVal === 'vertical') {
+              childLayoutVal = 'vertical'
+            }
+          }
+
+          return {
+            id: idMap[String(row.id)],
+            type: 'orgNode',
+            position: { x: 0, y: 0 },          // dagre calculará las posiciones reales
+            data: {
+              label: String(row.label),
+              sublabel: row.sublabel ? String(row.sublabel) : '',
+              department: row.department ? String(row.department) : '',
+              headcount: headcountVal,
+              childLayout: childLayoutVal,
+              style: {
               backgroundColor: row.backgroundColor || '#1e3a5f',
               textColor: '#ffffff',
               borderColor: 'transparent',

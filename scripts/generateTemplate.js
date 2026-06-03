@@ -8,15 +8,15 @@ const __dirname = path.dirname(__filename)
 
 // Cabeceras y filas de ejemplo para la estructura jerárquica
 const headers = [
-  ['id', 'label', 'sublabel', 'parentId', 'backgroundColor', 'badgeText', 'badgeColor']
+  ['id', 'label', 'sublabel', 'parentId', 'backgroundColor', 'badgeText', 'badgeColor', 'headcount', 'childLayout']
 ]
 
 const data = [
-  [1, 'Presidencia', 'Director General', '', '#1E2538', '', ''],
-  [2, 'Secretaría General', 'Administración', 1, '#1E2538', '', ''],
-  [3, 'Dirección Jurídica', 'Asuntos Legales', 1, '#1E2538', '', ''],
-  [4, 'VP Comercial', 'División Ventas', 1, '#2155FF', '', ''],
-  [5, 'Director Pyme', 'Canal Digital', 4, '#2155FF', 'Nuevo', '#16A34A']
+  [1, 'Presidencia', 'Director General', '', '#1E2538', '', '', 1, 'vertical'],
+  [2, 'Secretaría General', 'Administración', 1, '#1E2538', '', '', 3, 'horizontal'],
+  [3, 'Dirección Jurídica', 'Asuntos Legales', 1, '#1E2538', '', '', 1, 'horizontal'],
+  [4, 'VP Comercial', 'División Ventas', 1, '#2155FF', '', '', '', 'horizontal'],
+  [5, 'Director Pyme', 'Canal Digital', 4, '#2155FF', 'Nuevo', '#16A34A', 2, 'horizontal']
 ]
 
 const rows = headers.concat(data)
@@ -32,7 +32,9 @@ ws['!cols'] = [
   { wch: 10 }, // parentId
   { wch: 18 }, // backgroundColor
   { wch: 12 }, // badgeText
-  { wch: 12 }  // badgeColor
+  { wch: 12 }, // badgeColor
+  { wch: 10 }, // headcount
+  { wch: 12 }  // childLayout
 ]
 
 // Crear libro de trabajo (workbook)

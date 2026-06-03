@@ -1,17 +1,30 @@
 import React, { useState } from 'react'
-import { Trash2, AlertTriangle } from 'lucide-react'
+import { Trash2, AlertTriangle, LayoutGrid, List } from 'lucide-react'
 import Modal from '../shared/Modal'
 
 export default function NodeEditor({ node, edges, onUpdateNode, onDeleteNode }) {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
 
-  const { label = '', sublabel = '', department = '' } = node.data || {}
+  const { label = '', sublabel = '', department = '', headcount = null } = node.data || {}
 
   // Verificar si el nodo tiene hijos (es origen de alguna arista)
   const hasChildren = edges.some(e => e.source === node.id)
 
   const handleTextChange = (field, value) => {
     onUpdateNode(node.id, { [field]: value })
+  }
+
+  const handleHeadcountChange = (value) => {
+    if (value === '' || value === null || value === undefined) {
+      onUpdateNode(node.id, { headcount: null })
+      return
+    }
+    const num = parseInt(value, 10)
+    if (isNaN(num)) {
+      onUpdateNode(node.id, { headcount: null })
+    } else {
+      onUpdateNode(node.id, { headcount: Math.max(1, num) })
+    }
   }
 
   const handleDeleteClick = () => {
@@ -76,6 +89,71 @@ export default function NodeEditor({ node, edges, onUpdateNode, onDeleteNode }) 
             className="w-full bg-bg-app border border-border-custom text-text-primary text-sm rounded-custom-pill px-4 py-2.5 focus:outline-none focus:border-primary transition-colors"
           />
         </div>
+
+        {/* Input Headcount */}
+        <div>
+          <label htmlFor="nodeHeadcount" className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+            Número de personas (Headcount)
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="number"
+              id="nodeHeadcount"
+              min="1"
+              value={headcount === null || headcount === undefined ? '' : headcount}
+              onChange={(e) => handleHeadcountChange(e.target.value)}
+              placeholder="Ej. 1"
+              className="flex-1 bg-bg-app border border-border-custom text-text-primary text-sm rounded-custom-pill px-4 py-2.5 focus:outline-none focus:border-primary transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            />
+            {headcount !== null && headcount !== undefined && headcount !== '' && (
+              <button
+                type="button"
+                onClick={() => handleHeadcountChange(null)}
+                className="px-4 py-2.5 text-xs font-semibold bg-bg-app hover:bg-bg-muted text-text-secondary hover:text-text-primary border border-border-custom hover:border-text-secondary rounded-custom-pill transition-colors cursor-pointer"
+                title="Limpiar valor"
+              >
+                Limpiar
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Toggle Distribución de hijos */}
+        {hasChildren && (
+          <div>
+            <span className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+              Distribución de hijos
+            </span>
+            <div className="flex bg-bg-app p-1 rounded-custom-pill border border-border-custom max-w-[220px]">
+              <button
+                type="button"
+                onClick={() => onUpdateNode(node.id, { childLayout: 'horizontal' })}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold rounded-custom-pill transition-all cursor-pointer ${
+                  (node.data?.childLayout || 'horizontal') === 'horizontal'
+                    ? 'bg-surface text-primary shadow-sm'
+                    : 'text-text-secondary hover:text-text-primary'
+                }`}
+                title="Distribución Horizontal"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span>Horizontal</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onUpdateNode(node.id, { childLayout: 'vertical' })}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold rounded-custom-pill transition-all cursor-pointer ${
+                  node.data?.childLayout === 'vertical'
+                    ? 'bg-surface text-primary shadow-sm'
+                    : 'text-text-secondary hover:text-text-primary'
+                }`}
+                title="Distribución Vertical"
+              >
+                <List className="w-3.5 h-3.5" />
+                <span>Vertical</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Botón de Eliminación al Fondo */}
